@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/compassFragment"
+        android:title="@string/tab_compass"
+        android:icon="@android:drawable/ic_menu_compass"/>
+    <item android:id="@+id/mapFragment"
+        android:title="@string/tab_map"
+        android:icon="@android:drawable/ic_menu_mapmode"/>
+    <item android:id="@+id/arFragment"
+        android:title="@string/tab_ar"
+        android:icon="@android:drawable/ic_menu_camera"/>
+</menu>

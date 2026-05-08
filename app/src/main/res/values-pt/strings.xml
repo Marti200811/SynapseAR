@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- General -->
+    <string name="app_name">Synapse AR</string>
+    <string name="no_value">--</string>
+    <string name="no_angle">--°</string>
+
+    <!-- Tabs -->
+    <string name="tab_compass">Bússola</string>
+    <string name="tab_map">Mapa</string>
+    <string name="tab_ar">AR</string>
+
+    <!-- Compass screen -->
+    <string name="bearing_to_target">Azimute</string>
+    <string name="elevation_label">Elevação</string>
+    <string name="distance_to_target">Distância</string>
+    <string name="no_target">Sem alvo. Selecione um no Mapa.</string>
+    <string name="no_target_short">Sem alvo</string>
+    <string name="select_satellite">📡  Selecionar Satélite</string>
+    <string name="btn_antenna">📡 Antena</string>
+    <string name="btn_scan_wifi">📶 Escanear WiFi</string>
+    <string name="btn_select_tower">📺 Selecionar Torre</string>
+    <string name="mode_horizontal">HORIZONTAL</string>
+    <string name="mode_vertical">VERTICAL</string>
+    <string name="sat_visible">Visível</string>
+    <string name="sat_below_horizon">Abaixo do horizonte</string>
+
+    <!-- Map screen -->
+    <string name="search_hint">Buscar lugar ou endereço...</string>
+    <string name="search_empty">Digite um lugar para buscar</string>
+    <string name="search_not_found">Não encontrado \"%s\"</string>
+    <string name="search_error">Erro na busca. Verifique sua conexão.</string>
+    <string name="map_tap_hint">Toque no mapa para definir um alvo</string>
+    <string name="map_target_label">Alvo</string>
+    <string name="bearing_label">Rumo</string>
+    <string name="distance_label">Distância</string>
+
+    <!-- AR screen -->
+    <string name="ar_no_target">Sem alvo</string>
+
+    <!-- Satellite picker -->
+    <string name="sat_picker_title">Selecionar Satélite</string>
+    <string name="sat_search_hint">Buscar satélite...</string>
+
+    <!-- Antenna picker -->
+    <string name="antenna_picker_title">Tipo de Antena</string>
+
+    <!-- TDT picker -->
+    <string name="tdt_picker_title">📺 Transmissores TDT</string>
+    <string name="tdt_search_hint">Buscar cidade ou transmissor...</string>
+
+    <!-- WiFi scanner -->
+    <string name="wifi_scan_title">Redes WiFi detectadas</string>
+    <string name="wifi_no_permission">Permissão de localização necessária para escanear WiFi</string>
+
+    <!-- Units -->
+    <string name="meters_short">m</string>
+    <string name="km_short">km</string>
+    <string name="miles_short">mi</string>
+    <string name="feet_short">ft</string>
+
+    <!-- Upgrade / Pro -->
+    <string name="upgrade_title">Synapse AR Pro</string>
+    <string name="upgrade_subtitle">Desbloqueie todos os recursos profissionais</string>
+    <string name="upgrade_feature_satellites">📡  Base completa de satélites (~35)</string>
+    <string name="upgrade_feature_wifi">📶  Scanner WiFi em tempo real</string>
+    <string name="upgrade_feature_tdt">📺  Base de dados TDT mundial</string>
+    <string name="upgrade_feature_ar">🎯  Tela AR com guia visual</string>
+    <string name="upgrade_feature_noads">🚫  Sem publicidade</string>
+    <string name="upgrade_btn_buy">Comprar Pro — $2.99</string>
+    <string name="upgrade_btn_restore">Restaurar compra anterior</string>
+    <string name="upgrade_btn_later">Talvez depois</string>
+
+    <!-- Settings -->
+    <string name="settings_units_label">Sistema de unidades</string>
+    <string name="units_auto">Automático (baseado no idioma do telefone)</string>
+    <string name="units_metric">Métrico  —  km / m</string>
+    <string name="units_imperial">Imperial  —  mi / ft</string>
+</resources>

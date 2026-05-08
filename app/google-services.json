@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "334225940624",
+    "project_id": "synapsear-f606d",
+    "storage_bucket": "synapsear-f606d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:334225940624:android:9d7cd3e380f3e418edb815",
+        "android_client_info": {
+          "package_name": "com.example.ar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiDrwVjx-19AQtF3zzyxemCYWSpOgFp1M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

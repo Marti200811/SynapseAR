@@ -1,0 +1,46 @@
+[versions]
+agp = "9.2.1"
+kotlin = "2.2.10"
+coreKtx = "1.15.0"
+appcompat = "1.7.0"
+material = "1.12.0"
+constraintlayout = "2.2.0"
+fragmentKtx = "1.8.5"
+navigation = "2.9.6"
+playServicesMaps = "19.0.0"
+playServicesLocation = "21.3.0"
+camerax = "1.4.1"
+lifecycle = "2.8.7"
+coroutines = "1.9.0"
+secrets = "2.0.1"
+admob = "23.6.0"
+billing = "7.1.1"
+googleServices = "4.4.4"
+firebaseCrashlytics = "3.0.2"
+
+[libraries]
+androidx-core-ktx                = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-appcompat               = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+material                         = { module = "com.google.android.material:material", version.ref = "material" }
+androidx-constraintlayout        = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+androidx-fragment-ktx            = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
+androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
+androidx-navigation-ui-ktx       = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
+play-services-maps               = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+play-services-location           = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+camerax-core                     = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2                  = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle                = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view                     = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+androidx-lifecycle-runtime-ktx   = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+kotlinx-coroutines-android       = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+admob                            = { module = "com.google.android.gms:play-services-ads", version.ref = "admob" }
+billing                          = { module = "com.android.billingclient:billing-ktx",    version.ref = "billing" }
+
+[plugins]
+android-application       = { id = "com.android.application", version.ref = "agp" }
+kotlin-android            = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+navigation-safeargs       = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
+secrets-gradle            = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
+google-services           = { id = "com.google.gms.google-services",    version.ref = "googleServices" }
+firebase-crashlytics-plugin = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }

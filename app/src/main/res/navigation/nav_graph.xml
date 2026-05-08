@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/compassFragment">
+
+    <fragment
+        android:id="@+id/compassFragment"
+        android:name="com.example.ar.ui.compass.CompassFragment"
+        android:label="@string/tab_compass"/>
+
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.example.ar.ui.map.MapFragment"
+        android:label="@string/tab_map"/>
+
+    <fragment
+        android:id="@+id/arFragment"
+        android:name="com.example.ar.ui.ar.ArFragment"
+        android:label="@string/tab_ar"/>
+
+</navigation>
