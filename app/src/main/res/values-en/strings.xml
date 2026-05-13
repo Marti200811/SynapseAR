@@ -67,9 +67,10 @@
     <string name="upgrade_feature_tdt">📺  Worldwide TDT database</string>
     <string name="upgrade_feature_ar">🎯  AR screen with visual guide</string>
     <string name="upgrade_feature_noads">🚫  No ads</string>
-    <string name="upgrade_btn_buy">Buy Pro — $2.99</string>
-    <string name="upgrade_btn_restore">Restore previous purchase</string>
+    <string name="upgrade_btn_buy">🎁 Try free for 7 days — then $9.99/year</string>
+    <string name="upgrade_btn_restore">Restore previous subscription</string>
     <string name="upgrade_btn_later">Maybe later</string>
+    <string name="upgrade_trial_note">No charge for the first 7 days. Cancel anytime.</string>
 
     <!-- Settings -->
     <string name="settings_units_label">Unit system</string>

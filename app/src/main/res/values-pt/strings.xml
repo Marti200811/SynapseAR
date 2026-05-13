@@ -67,9 +67,10 @@
     <string name="upgrade_feature_tdt">📺  Base de dados TDT mundial</string>
     <string name="upgrade_feature_ar">🎯  Tela AR com guia visual</string>
     <string name="upgrade_feature_noads">🚫  Sem publicidade</string>
-    <string name="upgrade_btn_buy">Comprar Pro — $2.99</string>
-    <string name="upgrade_btn_restore">Restaurar compra anterior</string>
+    <string name="upgrade_btn_buy">🎁 Testar 7 dias grátis — depois $9.99/ano</string>
+    <string name="upgrade_btn_restore">Restaurar assinatura anterior</string>
     <string name="upgrade_btn_later">Talvez depois</string>
+    <string name="upgrade_trial_note">Sem cobrança nos primeiros 7 dias. Cancele quando quiser.</string>
 
     <!-- Settings -->
     <string name="settings_units_label">Sistema de unidades</string>
