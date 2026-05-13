@@ -17,7 +17,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
     }
 
     buildTypes {
@@ -63,8 +63,9 @@ dependencies {
     // Splash Screen API (compatibilidad Android 12+)
     implementation("androidx.core:core-splashscreen:1.0.1")
 
-    // AdMob
+    // AdMob + UMP (User Messaging Platform - consentimiento GDPR/Europa)
     implementation(libs.admob)
+    implementation("com.google.android.ump:user-messaging-platform:3.1.0")
 
     // Google Play Billing
     implementation(libs.billing)

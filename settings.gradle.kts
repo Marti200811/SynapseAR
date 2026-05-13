@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SynapseAR"
-include(":app")
+include(":app") 

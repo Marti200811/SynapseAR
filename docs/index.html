@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse AR — Quantix Labs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0f1e;
+            color: #c8d8e8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .logo-ring {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            border: 2px solid #00e5ff44;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px;
+            position: relative;
+        }
+        .logo-ring::before {
+            content: '';
+            position: absolute;
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            border: 2px solid #00e5ff88;
+        }
+        .logo-icon { font-size: 32px; }
+        .brand { color: #00e5ff; font-size: 12px; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { color: #ffffff; font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+        .tagline { color: #6b8aaa; font-size: 16px; margin-bottom: 48px; max-width: 400px; }
+        .links { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+        .link-card {
+            background: #0d1f35;
+            border: 1px solid #1e3a5f;
+            border-radius: 10px;
+            padding: 20px 28px;
+            text-decoration: none;
+            color: #c8d8e8;
+            transition: border-color 0.2s, transform 0.2s;
+            min-width: 180px;
+        }
+        .link-card:hover { border-color: #00e5ff66; transform: translateY(-2px); }
+        .link-card .icon { font-size: 24px; margin-bottom: 8px; }
+        .link-card .label { font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 4px; }
+        .link-card .desc { font-size: 12px; color: #6b8aaa; }
+        footer { margin-top: 56px; color: #3d5a70; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="logo-ring">
+        <span class="logo-icon">📡</span>
+    </div>
+    <div class="brand">Quantix Labs</div>
+    <h1>Synapse AR</h1>
+    <p class="tagline">Orientación profesional de antenas con realidad aumentada</p>
+
+    <div class="links">
+        <a href="terms.html" class="link-card">
+            <div class="icon">📄</div>
+            <div class="label">Términos y Condiciones</div>
+            <div class="desc">Condiciones de uso y suscripción</div>
+        </a>
+        <a href="privacy.html" class="link-card">
+            <div class="icon">🔒</div>
+            <div class="label">Política de Privacidad</div>
+            <div class="desc">Datos, GDPR y sus derechos</div>
+        </a>
+        <a href="mailto:SupportQuantixLabs@gmail.com" class="link-card">
+            <div class="icon">✉️</div>
+            <div class="label">Soporte</div>
+            <div class="desc">SupportQuantixLabs@gmail.com</div>
+        </a>
+    </div>
+
+    <footer>© 2026 Quantix Labs · República Argentina</footer>
+</body>
+</html>
