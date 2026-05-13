@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Arco pequeño -->
+    <path
+        android:pathData="M 35,72 A 15,15 0 0,1 65,72"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent"/>
+
+    <!-- Arco mediano -->
+    <path
+        android:pathData="M 24,72 A 26,26 0 0,1 76,72"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.75"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent"/>
+
+    <!-- Arco grande -->
+    <path
+        android:pathData="M 13,72 A 37,37 0 0,1 87,72"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2.5"
+        android:strokeAlpha="0.45"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent"/>
+
+    <!-- Palo de antena vertical -->
+    <path
+        android:pathData="M 50,72 L 50,22"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent"/>
+
+    <!-- Punto en la punta -->
+    <path
+        android:pathData="M 50,19 m -4,0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:fillColor="#00E5FF"/>
+
+    <!-- Punto central base -->
+    <path
+        android:pathData="M 50,72 m -3,0 a 3,3 0 1,0 6,0 a 3,3 0 1,0 -6,0"
+        android:fillColor="#00E5FF"/>
+
+</vector>
