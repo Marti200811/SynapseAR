@@ -60,6 +60,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
+    // Splash Screen API (compatibilidad Android 12+)
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
     // AdMob
     implementation(libs.admob)
 

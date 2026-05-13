@@ -9,12 +9,14 @@
         <item name="android:navigationBarColor">@color/bg_deep</item>
     </style>
 
-    <!-- Tema para la Splash Screen: fondo negro, sin barra, sin flash blanco -->
-    <style name="Theme.SynapseAR.Splash" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:windowBackground">#000000</item>
+    <!-- Tema para la Splash Screen: negro con ícono propio, sin flash blanco -->
+    <style name="Theme.SynapseAR.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#000000</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_signal</item>
+        <item name="windowSplashScreenIconBackgroundColor">#000000</item>
+        <item name="postSplashScreenTheme">@style/Theme.SynapseAR</item>
         <item name="android:statusBarColor">#000000</item>
         <item name="android:navigationBarColor">#000000</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowFullscreen">false</item>
     </style>
 </resources>
