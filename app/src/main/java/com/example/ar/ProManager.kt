@@ -1,6 +1,7 @@
 package com.example.ar
 
 import android.content.Context
+import com.example.ar.BuildConfig
 
 /**
  * Gestiona el estado Pro del usuario.
