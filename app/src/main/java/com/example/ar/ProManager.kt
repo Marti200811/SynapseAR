@@ -12,9 +12,12 @@ object ProManager {
     private const val PREFS = "synapse_prefs"   // mismo archivo que SettingsManager
     private const val KEY_PRO = "is_pro"
 
-    fun isPro(context: Context): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    fun isPro(context: Context): Boolean {
+        // En debug siempre Pro para poder probar todas las funciones
+        if (BuildConfig.DEBUG) return true
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getBoolean(KEY_PRO, false)
+    }
 
     fun setPro(context: Context, value: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
