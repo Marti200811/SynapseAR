@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:hint="Buscar lugar o dirección..."
+            android:hint="@string/search_hint"
             android:textColorHint="@color/text_secondary"
             android:textColor="@color/text_primary"
             android:textSize="14sp"

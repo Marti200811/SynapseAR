@@ -77,4 +77,23 @@
     <string name="units_auto">Automatic (based on phone language)</string>
     <string name="units_metric">Metric  —  km / m</string>
     <string name="units_imperial">Imperial  —  mi / ft</string>
+
+    <!-- Compass themes (Pro) -->
+    <string name="settings_theme_label">Compass theme</string>
+    <string name="theme_pro_badge">PRO</string>
+    <string name="theme_cyber">⚡ Cyber  —  Futuristic cyan</string>
+    <string name="theme_military">🎖 Military  —  Tactical green</string>
+    <string name="theme_classic">🏅 Classic  —  Analog gold</string>
+    <string name="theme_neon">💜 Neon  —  Pink / violet</string>
+
+    <!-- Calibration -->
+    <string name="calibration_title">Calibrate compass</string>
+    <string name="calibration_subtitle">Sensor accuracy is low. Perform this movement to improve it.</string>
+    <string name="calibration_step1">1. Hold the phone in front of you</string>
+    <string name="calibration_step2">2. Move it in a figure-8 pattern in the air for 5–10 seconds</string>
+    <string name="calibration_step3">Calibration improves automatically as you perform the movement</string>
+    <string name="calibration_btn_ok">Got it, calibrate</string>
+    <string name="calibration_icon_desc">Calibration icon</string>
+    <string name="calibration_warning_low">⚠ Low accuracy — Tap to calibrate</string>
+    <string name="calibration_warning_none">⚠ COMPASS NOT CALIBRATED — Tap to calibrate</string>
 </resources>

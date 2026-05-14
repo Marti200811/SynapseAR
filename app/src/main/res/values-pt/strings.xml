@@ -77,4 +77,23 @@
     <string name="units_auto">Automático (baseado no idioma do telefone)</string>
     <string name="units_metric">Métrico  —  km / m</string>
     <string name="units_imperial">Imperial  —  mi / ft</string>
+
+    <!-- Temas da bússola (Pro) -->
+    <string name="settings_theme_label">Tema da bússola</string>
+    <string name="theme_pro_badge">PRO</string>
+    <string name="theme_cyber">⚡ Cyber  —  Ciano futurista</string>
+    <string name="theme_military">🎖 Military  —  Verde tático</string>
+    <string name="theme_classic">🏅 Classic  —  Ouro analógico</string>
+    <string name="theme_neon">💜 Neon  —  Rosa / violeta</string>
+
+    <!-- Calibração -->
+    <string name="calibration_title">Calibrar bússola</string>
+    <string name="calibration_subtitle">A precisão do sensor está baixa. Realize este movimento para melhorá-la.</string>
+    <string name="calibration_step1">1. Segure o telefone na frente de você</string>
+    <string name="calibration_step2">2. Mova-o descrevendo um "8" no ar por 5 a 10 segundos</string>
+    <string name="calibration_step3">A calibração melhora automaticamente enquanto você realiza o movimento</string>
+    <string name="calibration_btn_ok">Entendido, calibrar</string>
+    <string name="calibration_icon_desc">Ícone de calibração</string>
+    <string name="calibration_warning_low">⚠ Precisão baixa — Toque para calibrar</string>
+    <string name="calibration_warning_none">⚠ BÚSSOLA SEM CALIBRAR — Toque para calibrar</string>
 </resources>
