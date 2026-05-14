@@ -70,8 +70,13 @@ dependencies {
     // Google Play Billing
     implementation(libs.billing)
 
-    // Firebase Crashlytics
+    // Firebase Crashlytics + Remote Config
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-crashlytics-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-config-ktx")
+
+    // Google Play In-App Updates
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }

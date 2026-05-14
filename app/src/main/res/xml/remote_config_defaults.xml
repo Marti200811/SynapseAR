@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Valores por defecto de Firebase Remote Config.
+    Si el fetch falla (sin internet, primer arranque), se usan estos.
+
+    force_update_version:
+        0  = no forzar ninguna actualización
+        N  = forzar actualización immediate si versionCode instalado < N
+        Ejemplo: si publicas el versionCode 3 con un fix crítico,
+                 setea este valor a 3 en la consola de Firebase.
+-->
+<defaultsMap>
+    <entry>
+        <key>force_update_version</key>
+        <value>0</value>
+    </entry>
+</defaultsMap>

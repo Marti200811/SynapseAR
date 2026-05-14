@@ -1,5 +1,6 @@
 package com.example.ar
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
@@ -24,6 +25,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var consentInformation: ConsentInformation
     private var isMobileAdsInitialized = false
+
+    // ── In-App Updates ────────────────────────────────────────────────────
+    private val updateManager by lazy { UpdateManager(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -130,13 +134,25 @@ class MainActivity : AppCompatActivity() {
         dialog.show(supportFragmentManager, "upgrade")
     }
 
-    // ── Ciclo de vida AdMob ───────────────────────────────────────────────
+    // ── Ciclo de vida AdMob + Updates ────────────────────────────────────
 
-    override fun onPause()   { super.onPause();   binding.adBanner.pause() }
-    override fun onResume()  { super.onResume();  binding.adBanner.resume() }
+    override fun onPause()  { super.onPause();  binding.adBanner.pause() }
+    override fun onResume() {
+        super.onResume()
+        binding.adBanner.resume()
+        // Chequea updates cada vez que la app vuelve al frente
+        updateManager.checkForUpdates()
+    }
     override fun onDestroy() {
         super.onDestroy()
         binding.adBanner.destroy()
         billingManager.disconnect()
+        updateManager.unregister()
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        updateManager.onActivityResult(requestCode, resultCode)
     }
 }
