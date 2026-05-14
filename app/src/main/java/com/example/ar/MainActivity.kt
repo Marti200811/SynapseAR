@@ -55,21 +55,23 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setupWithNavController(navController)
 
-        // Bloquear tab AR si no es Pro
+        // Bloquear tab AR si no es Pro (en debug siempre permitido)
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            if (destination.id == R.id.arFragment && sharedVm.isPro.value != true) {
+            if (destination.id == R.id.arFragment
+                && !BuildConfig.DEBUG
+                && sharedVm.isPro.value != true) {
                 navController.popBackStack()
                 showUpgradeDialog()
             }
         }
 
-        // Billing
+        // Billing — en debug ignoramos el resultado para no sobreescribir isPro=true
         billingManager = BillingManager(this) { isPro ->
-            sharedVm.isPro.postValue(isPro)
+            if (!BuildConfig.DEBUG) sharedVm.isPro.postValue(isPro)
         }
         billingManager.connect()
 
-        // Inicializar isPro desde caché local
+        // Inicializar isPro desde caché local (debug siempre true)
         sharedVm.isPro.value = ProManager.isPro(this)
 
         // Ocultar banner si es Pro
