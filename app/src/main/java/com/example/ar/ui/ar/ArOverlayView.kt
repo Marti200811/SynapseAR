@@ -6,6 +6,7 @@ import android.hardware.SensorManager
 import android.util.AttributeSet
 import android.view.View
 import com.example.ar.ThemeManager
+import com.example.ar.ThemePalette
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.min
