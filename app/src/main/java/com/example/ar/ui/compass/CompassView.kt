@@ -2,10 +2,12 @@ package com.example.ar.ui.compass
 
 import android.content.Context
 import android.graphics.*
+import android.hardware.SensorManager
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.example.ar.R
+import com.example.ar.ThemeManager
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -17,28 +19,30 @@ class CompassView @JvmOverloads constructor(
 
     enum class Mode { HORIZONTAL, VERTICAL }
 
+    // Paleta dinámica (cambia según el tema Pro)
+    private val pal get() = ThemeManager.getPalette(context)
+
+    // Colors fijos de fondo (no varían con el tema)
     private val cBg    = ContextCompat.getColor(context, R.color.bg_panel)
     private val cGrid  = ContextCompat.getColor(context, R.color.grid_line)
-    private val cText  = ContextCompat.getColor(context, R.color.text_primary)
-    private val cText2 = ContextCompat.getColor(context, R.color.text_secondary)
-    private val cCyan  = ContextCompat.getColor(context, R.color.accent_cyan)
-    private val cGlow  = ContextCompat.getColor(context, R.color.accent_cyan_glow)
-    private val cAmber = ContextCompat.getColor(context, R.color.accent_amber)
-    private val cRed   = ContextCompat.getColor(context, R.color.accent_red)
 
-    private val ringPaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = cGrid; strokeWidth = 2f }
-    private val tickPaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cText2; strokeWidth = 2f }
-    private val majorTickPaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cText; strokeWidth = 4f }
-    private val cardinalPaint   = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cText; textAlign = Paint.Align.CENTER; isFakeBoldText = true }
-    private val degPaint        = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cText2; textAlign = Paint.Align.CENTER }
-    private val readoutPaint    = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cCyan; textAlign = Paint.Align.CENTER; isFakeBoldText = true }
-    private val readoutSubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cText2; textAlign = Paint.Align.CENTER }
-    private val needlePaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cRed; style = Paint.Style.FILL }
-    private val targetPaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cAmber; style = Paint.Style.FILL }
-    private val glowPaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cGlow; style = Paint.Style.FILL }
+    private val ringPaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
+    private val tickPaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 2f }
+    private val majorTickPaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 4f }
+    private val cardinalPaint   = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; isFakeBoldText = true }
+    private val degPaint        = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val readoutPaint    = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; isFakeBoldText = true }
+    private val readoutSubPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val needlePaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val targetPaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val glowPaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val bgPaint         = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = cBg; style = Paint.Style.FILL }
     private val elevBarPaint    = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f }
     private val elevLabelPaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.LEFT }
+    private val calBgPaint      = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val calTxtPaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; isFakeBoldText = true; color = Color.WHITE
+    }
 
     var azimuth: Float = 0f
         set(value) { field = value; invalidate() }
@@ -50,13 +54,43 @@ class CompassView @JvmOverloads constructor(
         set(value) { field = value; invalidate() }
     var mode: Mode = Mode.HORIZONTAL
         set(value) { field = value; invalidate() }
-
-    /** Elevación requerida del satélite (0–90°). Null = sin satélite seleccionado */
     var targetElevation: Float? = null
+        set(value) { field = value; invalidate() }
+    var calibrationLevel: Int = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
         set(value) { field = value; invalidate() }
 
     override fun onDraw(canvas: Canvas) {
+        val p = pal
+        // Actualizar colores desde la paleta activa
+        ringPaint.color       = cGrid
+        tickPaint.color       = p.textSub
+        majorTickPaint.color  = p.text
+        cardinalPaint.color   = p.text
+        degPaint.color        = p.textSub
+        readoutPaint.color    = p.primary
+        readoutSubPaint.color = p.textSub
+        needlePaint.color     = p.needle
+        targetPaint.color     = p.secondary
+        glowPaint.color       = p.glow
+
         if (mode == Mode.HORIZONTAL) drawDial(canvas) else drawVerticalHud(canvas)
+        drawCalibrationBanner(canvas)
+    }
+
+    private fun drawCalibrationBanner(canvas: Canvas) {
+        if (calibrationLevel >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM) return
+        val w = width.toFloat()
+        val h = height.toFloat()
+        val bannerH = h * 0.06f
+        calBgPaint.color = if (calibrationLevel <= SensorManager.SENSOR_STATUS_UNRELIABLE)
+            Color.argb(210, 200, 30, 30) else Color.argb(210, 180, 120, 0)
+        canvas.drawRect(0f, 0f, w, bannerH, calBgPaint)
+        calTxtPaint.textSize = bannerH * 0.55f
+        val msg = if (calibrationLevel <= SensorManager.SENSOR_STATUS_UNRELIABLE)
+            "⚠ BRÚJULA SIN CALIBRAR — Tocá para calibrar"
+        else
+            "⚠ Calibración baja — Tocá para calibrar"
+        canvas.drawText(msg, w / 2f, bannerH * 0.70f, calTxtPaint)
     }
 
     // ── Modo horizontal ───────────────────────────────────────────────────────

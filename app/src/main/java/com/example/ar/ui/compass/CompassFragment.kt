@@ -13,12 +13,15 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.google.android.gms.location.*
+import com.example.ar.CalibrationDialog
+import com.example.ar.CompassTheme
 import com.example.ar.MainActivity
 import com.example.ar.ProManager
 import com.example.ar.ProximityBeeper
 import com.example.ar.R
 import com.example.ar.SettingsDialog
 import com.example.ar.SharedViewModel
+import com.example.ar.ThemeManager
 import com.example.ar.antenna.AntennaPickerDialog
 import com.example.ar.antenna.AntennaType
 import com.example.ar.tdt.TdtPickerDialog
@@ -71,6 +74,26 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             val dialog = SettingsDialog()
             dialog.onUnitsChanged = { updateReadouts() }
             dialog.show(parentFragmentManager, "settings")
+        }
+
+        // Toque en la brújula → calibración (si calibración baja) o selector de tema (Pro)
+        binding.compass.setOnClickListener {
+            val acc = orientation.calibrationAccuracy
+            if (acc <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
+                CalibrationDialog().show(parentFragmentManager, "calib")
+            } else if (ProManager.isPro(requireContext())) {
+                showThemePicker()
+            }
+        }
+
+        // Long press en brújula → selector de tema (Pro)
+        binding.compass.setOnLongClickListener {
+            if (ProManager.isPro(requireContext())) {
+                showThemePicker()
+            } else {
+                (requireActivity() as MainActivity).showUpgradeDialog()
+            }
+            true
         }
 
         // Botón tipo de antena
@@ -280,6 +303,31 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             if (mode == OrientationManager.Mode.VERTICAL) "VERTICAL" else "HORIZONTAL"
         lastAzimuth = azimuth
         updateBeeper()
+    }
+
+    override fun onCalibrationChanged(accuracy: Int) {
+        binding.compass.calibrationLevel = accuracy
+        if (accuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
+            if (parentFragmentManager.findFragmentByTag("calib") == null) {
+                CalibrationDialog().show(parentFragmentManager, "calib")
+            }
+        }
+    }
+
+    private fun showThemePicker() {
+        val themes = CompassTheme.values()
+        val current = ThemeManager.getTheme(requireContext())
+        val names = themes.map { it.displayName }.toTypedArray()
+        val checkedItem = themes.indexOf(current)
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_SynapseAR_Dialog)
+            .setTitle(getString(R.string.settings_theme_label))
+            .setSingleChoiceItems(names, checkedItem) { dialog, which ->
+                ThemeManager.setTheme(requireContext(), themes[which])
+                binding.compass.invalidate()
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun updateBeeper() {

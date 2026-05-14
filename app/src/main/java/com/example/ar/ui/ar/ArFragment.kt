@@ -145,10 +145,25 @@ class ArFragment : Fragment(), OrientationManager.Listener {
 
     override fun onOrientation(azimuth: Float, pitch: Float, roll: Float, mode: OrientationManager.Mode) {
         lastAzimuth = azimuth
-        binding.arOverlay.azimuth = azimuth
-        binding.arOverlay.pitch   = pitch
+        binding.arOverlay.azimuth        = azimuth
+        binding.arOverlay.pitch          = pitch
+        binding.arOverlay.roll           = roll
+        binding.arOverlay.isVerticalMode = (mode == OrientationManager.Mode.VERTICAL)
         updateAligned()
         updateBeeper()
+    }
+
+    override fun onCalibrationChanged(accuracy: Int) {
+        binding.arOverlay.calibrationLevel = accuracy
+        // Mostrar diálogo de calibración si la precisión es baja o nula
+        if (accuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
+            showCalibrationHint()
+        }
+    }
+
+    private fun showCalibrationHint() {
+        if (!isAdded || parentFragmentManager.findFragmentByTag("calib") != null) return
+        com.example.ar.CalibrationDialog().show(parentFragmentManager, "calib")
     }
 
     // ── Actualizar lecturas ───────────────────────────────────────────────────

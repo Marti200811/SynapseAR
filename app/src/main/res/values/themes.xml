@@ -9,6 +9,14 @@
         <item name="android:navigationBarColor">@color/bg_deep</item>
     </style>
 
+    <!-- Overlay para dialogs: fondo oscuro, texto claro -->
+    <style name="ThemeOverlay.SynapseAR.Dialog" parent="ThemeOverlay.Material3">
+        <item name="colorSurface">@color/bg_panel</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorPrimary">@color/accent_cyan</item>
+        <item name="android:colorBackground">@color/bg_panel</item>
+    </style>
+
     <!-- Tema para la Splash Screen del sistema: negro puro, sin ícono, imperceptible -->
     <style name="Theme.SynapseAR.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#000000</item>
