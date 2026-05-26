@@ -41,4 +41,15 @@
             android:textSize="12sp"/>
     </LinearLayout>
 
+    <!-- Elevación desde la ubicación del usuario -->
+    <TextView
+        android:id="@+id/tvSatElevation"
+        android:layout_width="56dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone"/>
+
 </LinearLayout>

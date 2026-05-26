@@ -2,6 +2,7 @@ package com.example.ar.ui.compass
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
@@ -12,7 +13,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 import com.example.ar.CalibrationDialog
 import com.example.ar.CompassTheme
 import com.example.ar.MainActivity
@@ -45,11 +51,26 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     private val beeper = ProximityBeeper()
     private var lastAzimuth = 0f
     private var lastTargetBearing = Double.NaN
+    private var userCountryCode: String? = null   // ISO 3166-1, se obtiene via Geocoder
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
-            currentLocation = result.lastLocation
+            val loc = result.lastLocation ?: return
+            currentLocation = loc
             updateReadouts()
+            // Obtener código de país en background (solo si aún no lo tenemos)
+            if (userCountryCode == null) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    userCountryCode = withContext(Dispatchers.IO) {
+                        try {
+                            @Suppress("DEPRECATION")
+                            Geocoder(requireContext(), Locale.getDefault())
+                                .getFromLocation(loc.latitude, loc.longitude, 1)
+                                ?.firstOrNull()?.countryCode
+                        } catch (e: Exception) { null }
+                    }
+                }
+            }
         }
     }
 
@@ -121,7 +142,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 }
                 AntennaType.TDT -> {
                     if (ProManager.isPro(requireContext())) {
-                        TdtPickerDialog(currentLocation) { transmitter ->
+                        // Pasar código de país para filtrar por país del usuario
+                        TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
                             sharedVm.selectedTdt.value = transmitter
                         }.show(parentFragmentManager, "tdt_picker")
                     } else {
@@ -129,7 +151,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                     }
                 }
                 else -> {
-                    SatellitePickerDialog { satellite ->
+                    // Pasar ubicación actual para filtrar por visibilidad desde el hemisferio del usuario
+                    SatellitePickerDialog(currentLocation) { satellite ->
                         sharedVm.selectedSatellite.value = satellite
                         sharedVm.antennaType.value = AntennaType.SATELLITE
                     }.show(parentFragmentManager, "sat_picker")

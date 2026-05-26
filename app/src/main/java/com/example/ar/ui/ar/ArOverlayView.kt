@@ -50,6 +50,18 @@ class ArOverlayView @JvmOverloads constructor(
     /** Distancia formateada para mostrar en la retícula flotante */
     var targetDistanceStr: String = ""
 
+    /** Punto de un satélite visible en el cinturón geoestacionario */
+    data class SatelliteDot(
+        val azimuth: Float,
+        val elevation: Float,
+        val name: String,
+        val isSelected: Boolean = false
+    )
+
+    /** Lista de todos los satélites a dibujar como puntos en el cielo AR */
+    var satelliteBelt: List<SatelliteDot> = emptyList()
+        set(v) { field = v; invalidate() }
+
     // ── Campo de visión asumido de la cámara trasera ─────────────────────────
     private val FOV_H = 65f   // grados horizontales
     private val FOV_V = 50f   // grados verticales
@@ -100,6 +112,7 @@ class ArOverlayView @JvmOverloads constructor(
         drawAzimuthTape(canvas, w, h, p)
         drawElevationBar(canvas, w, h, p)
         drawHorizonLine(canvas, w, h)
+        drawSatelliteBelt(canvas, w, h, p)   // cinturón detrás de la retícula
         drawCenterCrosshair(canvas, w, h, p)
         drawTargetReticle(canvas, w, h, p)
         drawCompassDial(canvas, w, h, p)
@@ -281,7 +294,68 @@ class ArOverlayView @JvmOverloads constructor(
         }
     }
 
-    // ── 5. Mira central fija (punto de referencia del teléfono) ─────────────
+    // ── 5. Cinturón de satélites geoestacionarios ────────────────────────────
+
+    /**
+     * Dibuja todos los satélites de [satelliteBelt] como puntos en el cielo AR.
+     * - Satélites visibles (elevación > 0°): punto cian semitransparente
+     * - Satélite seleccionado: punto ámbar más grande con nombre
+     * - Satélites bajo el horizonte: no se dibujan (no son útiles)
+     */
+    private fun drawSatelliteBelt(canvas: Canvas, w: Float, h: Float, p: ThemePalette) {
+        if (satelliteBelt.isEmpty()) return
+
+        val dotPaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.5f }
+        val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textAlign = Paint.Align.CENTER
+            textSize  = w * 0.026f
+            isFakeBoldText = true
+        }
+
+        for (dot in satelliteBelt) {
+            if (dot.elevation < 0f) continue   // bajo el horizonte: omitir
+
+            // Calcular posición en pantalla (mismo FOV que la retícula)
+            var azDiff = dot.azimuth - azimuth
+            while (azDiff > 180f) azDiff -= 360f
+            while (azDiff < -180f) azDiff += 360f
+            val elDiff = dot.elevation - pitch
+
+            val sx = w / 2f + (azDiff / (FOV_H / 2f)) * (w / 2f)
+            val sy = h / 2f - (elDiff / (FOV_V / 2f)) * (h / 2f)
+
+            // Fuera de pantalla: saltar
+            if (sx !in 0f..w || sy !in 0f..h) continue
+
+            if (dot.isSelected) {
+                // Satélite seleccionado: punto ámbar + anillo + nombre
+                dotPaint.color  = Color.argb(230, 255, 179, 0)   // ámbar
+                ringPaint.color = Color.argb(150, 255, 179, 0)
+                canvas.drawCircle(sx, sy, 9f, dotPaint)
+                canvas.drawCircle(sx, sy, 16f, ringPaint)
+                namePaint.color = Color.argb(220, 255, 179, 0)
+                canvas.drawText(dot.name.take(12), sx, sy - 20f, namePaint)
+            } else {
+                // Satélite visible no seleccionado: punto cian pequeño
+                val alpha = when {
+                    dot.elevation >= 30f -> 200
+                    dot.elevation >= 10f -> 150
+                    else                 -> 100
+                }
+                dotPaint.color  = Color.argb(alpha, 0, 200, 210)
+                ringPaint.color = Color.argb(alpha / 2, 0, 200, 210)
+                canvas.drawCircle(sx, sy, 5f, dotPaint)
+                // Solo mostrar nombre en satélites con buen ángulo
+                if (dot.elevation >= 20f) {
+                    namePaint.color = Color.argb(140, 180, 230, 240)
+                    canvas.drawText(dot.name.take(10), sx, sy - 10f, namePaint)
+                }
+            }
+        }
+    }
+
+    // ── 6. Mira central fija (punto de referencia del teléfono) ─────────────
 
     private fun drawCenterCrosshair(canvas: Canvas, w: Float, h: Float, p: ThemePalette) {
         val cx = w / 2f

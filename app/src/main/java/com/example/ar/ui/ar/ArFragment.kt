@@ -25,7 +25,9 @@ import com.example.ar.R
 import com.example.ar.SharedViewModel
 import com.example.ar.databinding.FragmentArBinding
 import com.example.ar.satellite.SatelliteCalculator
+import com.example.ar.satellite.SatelliteDatabase
 import com.example.ar.sensors.OrientationManager
+import com.example.ar.ui.ar.ArOverlayView.SatelliteDot
 import com.example.ar.util.GeoUtils
 import com.google.android.gms.location.*
 import kotlin.math.abs
@@ -50,6 +52,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         override fun onLocationResult(result: LocationResult) {
             currentLocation = result.lastLocation
             updateReadouts()
+            updateSatelliteBelt()
         }
     }
 
@@ -74,7 +77,10 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         fusedLocation = LocationServices.getFusedLocationProviderClient(requireContext())
 
         sharedVm.target.observe(viewLifecycleOwner) { updateReadouts() }
-        sharedVm.selectedSatellite.observe(viewLifecycleOwner) { updateReadouts() }
+        sharedVm.selectedSatellite.observe(viewLifecycleOwner) {
+            updateReadouts()
+            updateSatelliteBelt()   // refrescar el dot seleccionado en el cinturón
+        }
 
         checkAndRequestPermissions()
     }
@@ -248,6 +254,28 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         // Vibrar solo en el momento que pasa de no-alineado → alineado
         if (aligned && !wasAligned) vibrateOnLock()
         wasAligned = aligned
+    }
+
+    /**
+     * Calcula la posición de todos los satélites desde la ubicación actual
+     * y los pasa al overlay para dibujarlos como puntos en el cielo.
+     * Solo se llama cuando cambia la ubicación GPS (no en cada frame de sensor).
+     */
+    private fun updateSatelliteBelt() {
+        val loc = currentLocation ?: return
+        val selectedSat = sharedVm.selectedSatellite.value
+
+        val dots = SatelliteDatabase.satellites.mapNotNull { sat ->
+            val angles = SatelliteCalculator.calculate(loc.latitude, loc.longitude, sat.orbitalLon)
+            if (angles.elevationDeg < 0.0) return@mapNotNull null   // bajo el horizonte
+            SatelliteDot(
+                azimuth    = angles.azimuthDeg.toFloat(),
+                elevation  = angles.elevationDeg.toFloat(),
+                name       = sat.name,
+                isSelected = sat.name == selectedSat?.name
+            )
+        }
+        binding.arOverlay.satelliteBelt = dots
     }
 
     /** Patrón de vibración haptic al lograr el lock */

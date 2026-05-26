@@ -1,12 +1,17 @@
 package com.example.ar.ui.map
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Geocoder
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +25,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import com.example.ar.SearchHistoryManager
+import com.example.ar.sensors.OrientationManager
 import com.example.ar.R
 import com.example.ar.SettingsDialog
 import com.example.ar.SharedViewModel
@@ -52,7 +59,7 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
-class MapFragment : Fragment(), OnMapReadyCallback {
+class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener {
 
     private val sharedViewModel: SharedViewModel by activityViewModels()
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -69,6 +76,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private var aimingLine: Polyline? = null
     private var aimingCone: Polygon? = null
     private var targetMarker: com.google.android.gms.maps.model.Marker? = null
+
+    // Brújula para vibración al alinear en el mapa
+    private lateinit var orientationManager: OrientationManager
+    private var mapAzimuth = 0f
+    private var mapTargetBearing = Double.NaN
+    private var mapWasAligned = false
 
     // Actualización continua de ubicación
     private val locationCallback = object : LocationCallback() {
@@ -93,6 +106,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         btnSearch  = view.findViewById(R.id.btnSearch)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        orientationManager  = OrientationManager(requireContext()).also { it.listener = this }
+
+        // Botón de historial de búsqueda
+        view.findViewById<TextView>(R.id.btnMapHistory).setOnClickListener {
+            showHistoryDialog()
+        }
 
         val mapFragment = childFragmentManager
             .findFragmentById(R.id.mapContainer) as? SupportMapFragment
@@ -132,11 +151,13 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         startLocationUpdates()
+        orientationManager.start()
     }
 
     override fun onPause() {
         super.onPause()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        orientationManager.stop()
     }
 
     // ── Ubicación continua ───────────────────────────────────────────────────
@@ -159,6 +180,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         val target = sharedViewModel.target.value ?: run {
             tvBearing.text  = getString(R.string.no_angle)
             tvDistance.text = getString(R.string.no_value)
+            mapTargetBearing = Double.NaN
             return
         }
 
@@ -168,10 +190,91 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         val bearing = GeoUtils.bearingDegrees(
             location.latitude, location.longitude, target.lat, target.lon
         )
+        mapTargetBearing = bearing
         tvBearing.text  = "${bearing.toInt()}°"
         tvDistance.text = GeoUtils.formatDistance(distance, requireContext())
 
         drawAimingIndicator(userLatLng!!, target)
+        checkMapAlignment()
+    }
+
+    // ── OrientationManager.Listener (para vibración al alinear en el mapa) ──
+
+    override fun onOrientation(azimuth: Float, pitch: Float, roll: Float, mode: OrientationManager.Mode) {
+        mapAzimuth = azimuth
+        checkMapAlignment()
+    }
+
+    private fun checkMapAlignment() {
+        if (mapTargetBearing.isNaN()) { mapWasAligned = false; return }
+        var diff = Math.abs(mapAzimuth - mapTargetBearing)
+        if (diff > 180.0) diff = 360.0 - diff
+        val aligned = diff < 4.0   // 4° de tolerancia en el mapa
+        if (aligned && !mapWasAligned) vibrateOnLock()
+        mapWasAligned = aligned
+    }
+
+    private fun vibrateOnLock() {
+        val ctx = context ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vm = ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vm?.defaultVibrator?.vibrate(
+                VibrationEffect.createWaveform(longArrayOf(0, 80, 60, 180, 60, 80), -1)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            val v = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 80, 60, 180, 60, 80), -1))
+            } else {
+                @Suppress("DEPRECATION")
+                v?.vibrate(longArrayOf(0, 80, 60, 180, 60, 80), -1)
+            }
+        }
+    }
+
+    // ── Historial de búsqueda ────────────────────────────────────────────────
+
+    private fun showHistoryDialog() {
+        val ctx     = requireContext()
+        val entries = SearchHistoryManager.getAll(ctx)
+
+        if (entries.isEmpty()) {
+            Toast.makeText(ctx, "Sin historial de búsquedas", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val labels = entries.map { e ->
+            val star = if (e.isFavorite) "⭐ " else ""
+            "$star${e.name}"
+        }.toTypedArray()
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(ctx)
+            .setTitle("📋 Historial / Favoritos")
+            .setItems(labels) { _, idx ->
+                val e = entries[idx]
+                val target = com.example.ar.TargetPoint(e.lat, e.lon, e.name)
+                sharedViewModel.target.value = target
+                googleMap?.let { map ->
+                    targetMarker?.remove()
+                    val pos = LatLng(e.lat, e.lon)
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(pos, 13f))
+                    targetMarker = map.addMarker(
+                        MarkerOptions()
+                            .position(pos)
+                            .title(e.name)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
+                    )
+                }
+            }
+            .setNeutralButton("⭐ Favorito") { _, _ ->
+                // No hace nada aquí — el toggle se pide en long press en el futuro
+            }
+            .setNegativeButton("🗑 Limpiar historial") { _, _ ->
+                SearchHistoryManager.clearNonFavorites(ctx)
+                Toast.makeText(ctx, "Historial borrado (favoritos conservados)", Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     // ── Indicador de apuntamiento ────────────────────────────────────────────
@@ -290,6 +393,11 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
                         sharedViewModel.target.value = TargetPoint(addr.latitude, addr.longitude, name)
 
+                        // Guardar en historial de búsquedas
+                        SearchHistoryManager.add(requireContext(),
+                            SearchHistoryManager.Entry(name, addr.latitude, addr.longitude)
+                        )
+
                         googleMap?.let { map ->
                             targetMarker?.remove()
                             map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13f))
@@ -336,8 +444,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
 
         map.setOnMapClickListener { latLng ->
-            val target = TargetPoint(latLng.latitude, latLng.longitude)
+            val name = "%.4f°, %.4f°".format(latLng.latitude, latLng.longitude)
+            val target = TargetPoint(latLng.latitude, latLng.longitude, name)
             sharedViewModel.target.value = target
+            SearchHistoryManager.add(requireContext(),
+                SearchHistoryManager.Entry(name, latLng.latitude, latLng.longitude)
+            )
 
             targetMarker?.remove()
             targetMarker = map.addMarker(

@@ -18,6 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class TdtPickerDialog(
     private val location: Location?,
+    private val countryCode: String? = null,   // ISO 3166-1 alpha-2, ej: "AR", "ES"
     private val onSelected: (TdtTransmitter) -> Unit
 ) : DialogFragment() {
 
@@ -30,11 +31,11 @@ class TdtPickerDialog(
         val etSearch = view.findViewById<EditText>(R.id.etTdtSearch)
         val rv       = view.findViewById<RecyclerView>(R.id.rvTdtTransmitters)
 
-        // Lista inicial: más cercanos si hay GPS
-        val initial = if (location != null)
-            TdtDatabase.nearest(location.latitude, location.longitude, 30)
-        else
-            TdtDatabase.transmitters.map { it to null }
+        // Lista inicial:
+        //  1. Si hay código de país → transmisores del país del usuario, ordenados por distancia
+        //  2. Si no hay código pero hay GPS → 30 más cercanos
+        //  3. Sin GPS → todo el mundo
+        val initial = buildInitialList()
 
         adapter = TdtAdapter(initial) { transmitter ->
             onSelected(transmitter)
@@ -50,16 +51,16 @@ class TdtPickerDialog(
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString()?.trim() ?: ""
                 val results = if (query.isBlank()) {
-                    if (location != null)
-                        TdtDatabase.nearest(location.latitude, location.longitude, 30)
-                    else
-                        TdtDatabase.transmitters.map { it to null }
+                    buildInitialList()
                 } else {
-                    TdtDatabase.search(
-                        query,
-                        location?.latitude,
-                        location?.longitude
-                    )
+                    // Al buscar, filtrar dentro del país si lo conocemos
+                    if (countryCode != null) {
+                        TdtDatabase.search(query, location?.latitude, location?.longitude)
+                            .filter { it.first.country.equals(countryCode, ignoreCase = true) }
+                            .ifEmpty { TdtDatabase.search(query, location?.latitude, location?.longitude) }
+                    } else {
+                        TdtDatabase.search(query, location?.latitude, location?.longitude)
+                    }
                 }
                 adapter.update(results)
             }
@@ -68,6 +69,25 @@ class TdtPickerDialog(
         return MaterialAlertDialogBuilder(requireContext())
             .setView(view)
             .create()
+    }
+
+    private fun buildInitialList(): List<Pair<TdtTransmitter, Double?>> {
+        return when {
+            countryCode != null -> {
+                val local = TdtDatabase.byCountry(countryCode, location?.latitude, location?.longitude)
+                // Si hay transmisores del país, mostrarlos. Si no (país sin datos), caer a nearest
+                local.ifEmpty {
+                    if (location != null)
+                        TdtDatabase.nearest(location.latitude, location.longitude, 30)
+                    else
+                        TdtDatabase.transmitters.map { it to null }
+                }
+            }
+            location != null ->
+                TdtDatabase.nearest(location.latitude, location.longitude, 30)
+            else ->
+                TdtDatabase.transmitters.map { it to null }
+        }
     }
 }
 
