@@ -114,9 +114,18 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
         sharedViewModel.target.observe(viewLifecycleOwner) { target ->
             updateInfoPanel(target)
-            // Redibujar indicador cuando cambia el objetivo
             userLatLng?.let { user -> target?.let { t -> drawAimingIndicator(user, t) } }
                 ?: run { clearAimingOverlays() }
+        }
+
+        // Cambia el color del indicador a rojo cuando el usuario está alineado con el objetivo
+        sharedViewModel.isAligned.observe(viewLifecycleOwner) { aligned ->
+            val lineColor   = if (aligned) Color.argb(220, 255, 50,  50)  else Color.argb(220, 0, 229, 255)
+            val fillColor   = if (aligned) Color.argb(55,  255, 50,  50)  else Color.argb(55,  0, 229, 255)
+            val strokeColor = if (aligned) Color.argb(160, 255, 50,  50)  else Color.argb(160, 0, 229, 255)
+            aimingLine?.color       = lineColor
+            aimingCone?.fillColor   = fillColor
+            aimingCone?.strokeColor = strokeColor
         }
     }
 

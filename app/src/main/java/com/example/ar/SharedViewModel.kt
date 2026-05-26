@@ -21,4 +21,5 @@ class SharedViewModel : ViewModel() {
     val liveWifiRssi      = MutableLiveData<Int?>(null)
     val selectedTdt       = MutableLiveData<TdtTransmitter?>(null)
     val isPro             = MutableLiveData<Boolean>(false)
+    val isAligned         = MutableLiveData<Boolean>(false)
 }

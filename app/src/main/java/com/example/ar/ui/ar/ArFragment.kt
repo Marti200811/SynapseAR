@@ -1,10 +1,15 @@
 package com.example.ar.ui.ar
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,6 +44,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
     private var lastAzimuth = 0f
     private var lastTargetAzimuth = Double.NaN
     private var lastTargetElevation = Double.NaN
+    private var wasAligned = false   // para detectar el cambio false→true y vibrar
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -176,12 +182,15 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         when {
             satellite != null && loc != null -> {
                 val angles = SatelliteCalculator.calculate(loc.latitude, loc.longitude, satellite.orbitalLon)
+                val distStr = if (angles.visible) getString(R.string.sat_visible) else getString(R.string.sat_below_horizon)
                 binding.tvArTarget.text    = "📡 ${satellite.name}  ${satellite.positionLabel}"
                 binding.tvArBearing.text   = "%03.0f°".format(angles.azimuthDeg)
                 binding.tvArElevation.text = "%.1f°".format(angles.elevationDeg)
-                binding.tvArDistance.text  = if (angles.visible) getString(R.string.sat_visible) else getString(R.string.sat_below_horizon)
-                binding.arOverlay.targetAzimuth   = angles.azimuthDeg.toFloat()
-                binding.arOverlay.targetElevation = angles.elevationDeg.toFloat()
+                binding.tvArDistance.text  = distStr
+                binding.arOverlay.targetAzimuth    = angles.azimuthDeg.toFloat()
+                binding.arOverlay.targetElevation  = angles.elevationDeg.toFloat()
+                binding.arOverlay.targetLabel      = satellite.name
+                binding.arOverlay.targetDistanceStr = distStr
                 lastTargetAzimuth   = angles.azimuthDeg
                 lastTargetElevation = angles.elevationDeg
             }
@@ -189,12 +198,15 @@ class ArFragment : Fragment(), OrientationManager.Listener {
             target != null && loc != null -> {
                 val bearing  = GeoUtils.bearingDegrees(loc.latitude, loc.longitude, target.lat, target.lon)
                 val distance = GeoUtils.distanceMeters(loc.latitude, loc.longitude, target.lat, target.lon)
+                val distStr  = GeoUtils.formatDistance(distance, requireContext())
                 binding.tvArTarget.text    = "🎯 ${target.name.take(25)}"
                 binding.tvArBearing.text   = "%03.0f°".format(bearing)
                 binding.tvArElevation.text = getString(R.string.no_angle)
-                binding.tvArDistance.text  = GeoUtils.formatDistance(distance, requireContext())
-                binding.arOverlay.targetAzimuth   = bearing.toFloat()
-                binding.arOverlay.targetElevation = null
+                binding.tvArDistance.text  = distStr
+                binding.arOverlay.targetAzimuth    = bearing.toFloat()
+                binding.arOverlay.targetElevation  = null
+                binding.arOverlay.targetLabel      = target.name.take(20)
+                binding.arOverlay.targetDistanceStr = distStr
                 lastTargetAzimuth   = bearing
                 lastTargetElevation = Double.NaN
             }
@@ -218,6 +230,8 @@ class ArFragment : Fragment(), OrientationManager.Listener {
     private fun updateAligned() {
         if (lastTargetAzimuth.isNaN()) {
             binding.arOverlay.isAligned = false
+            sharedVm.isAligned.postValue(false)
+            wasAligned = false
             return
         }
         var azDiff = abs(lastAzimuth.toDouble() - lastTargetAzimuth)
@@ -227,7 +241,33 @@ class ArFragment : Fragment(), OrientationManager.Listener {
             abs(binding.arOverlay.pitch.toDouble() - lastTargetElevation)
         else 0.0
 
-        binding.arOverlay.isAligned = azDiff < 3.0 && elDiff < 3.0
+        val aligned = azDiff < 3.0 && elDiff < 3.0
+        binding.arOverlay.isAligned = aligned
+        sharedVm.isAligned.postValue(aligned)
+
+        // Vibrar solo en el momento que pasa de no-alineado → alineado
+        if (aligned && !wasAligned) vibrateOnLock()
+        wasAligned = aligned
+    }
+
+    /** Patrón de vibración haptic al lograr el lock */
+    private fun vibrateOnLock() {
+        val ctx = context ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vm = ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vm?.defaultVibrator?.vibrate(
+                VibrationEffect.createWaveform(longArrayOf(0, 80, 60, 180, 60, 80), -1)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            val v = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 80, 60, 180, 60, 80), -1))
+            } else {
+                @Suppress("DEPRECATION")
+                v?.vibrate(longArrayOf(0, 80, 60, 180, 60, 80), -1)
+            }
+        }
     }
 
     private fun updateBeeper() {
