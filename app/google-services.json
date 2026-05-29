@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:334225940624:android:9d7cd3e380f3e418edb815",
+        "mobilesdk_app_id": "1:334225940624:android:b9d5f292fb725d6aedb815",
         "android_client_info": {
-          "package_name": "com.example.ar"
+          "package_name": "com.quantixlabs.synapsear"
         }
       },
       "oauth_client": [],
