@@ -42,7 +42,7 @@ class SatellitePickerDialog(
         val elevationMap: Map<String, Double> = if (location != null) {
             SatelliteDatabase.satellites.associate { sat ->
                 sat.name to SatelliteCalculator.calculate(
-                    location.latitude, location.longitude, sat.orbitalLon
+                    location.latitude, location.longitude, sat.orbitalLon, location.altitude
                 ).elevationDeg
             }
         } else emptyMap()

@@ -8,11 +8,11 @@ object SatelliteDatabase {
 
     /** Satélites disponibles en la versión gratuita */
     val freeSatelliteNames = setOf(
-        "Hispasat 30W-5",   // España / Latinoamérica
-        "Astra 19.2E",      // Europa
-        "Hot Bird 13.0E",   // Europa
-        "Intelsat 21",      // Latinoamérica
-        "Star One C2"       // Brasil / Sudamérica
+        "Hispasat 30W-5",      // España / Latinoamérica
+        "Astra 1 (19.2°E)",    // Europa
+        "Hot Bird 13E",        // Europa
+        "Intelsat 21",         // Latinoamérica
+        "Star One C2"          // Brasil / Sudamérica
     )
 
     val satellites: List<Satellite> = listOf(

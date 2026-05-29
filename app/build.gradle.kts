@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
 
-        applicationId = "com.example.ar"
+        applicationId = "com.quantixlabs.synapsear"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

@@ -187,7 +187,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
 
         when {
             satellite != null && loc != null -> {
-                val angles = SatelliteCalculator.calculate(loc.latitude, loc.longitude, satellite.orbitalLon)
+                val angles = SatelliteCalculator.calculate(loc.latitude, loc.longitude, satellite.orbitalLon, loc.altitude)
                 val distStr = if (angles.visible) getString(R.string.sat_visible) else getString(R.string.sat_below_horizon)
                 binding.tvArTarget.text    = "📡 ${satellite.name}  ${satellite.positionLabel}"
                 binding.tvArBearing.text   = "%03.0f°".format(angles.azimuthDeg)
@@ -266,7 +266,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         val selectedSat = sharedVm.selectedSatellite.value
 
         val dots = SatelliteDatabase.satellites.mapNotNull { sat ->
-            val angles = SatelliteCalculator.calculate(loc.latitude, loc.longitude, sat.orbitalLon)
+            val angles = SatelliteCalculator.calculate(loc.latitude, loc.longitude, sat.orbitalLon, loc.altitude)
             if (angles.elevationDeg < 0.0) return@mapNotNull null   // bajo el horizonte
             SatelliteDot(
                 azimuth    = angles.azimuthDeg.toFloat(),

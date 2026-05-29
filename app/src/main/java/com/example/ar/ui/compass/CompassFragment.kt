@@ -1,14 +1,20 @@
 package com.example.ar.ui.compass
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import kotlin.math.abs
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -51,7 +57,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     private val beeper = ProximityBeeper()
     private var lastAzimuth = 0f
     private var lastTargetBearing = Double.NaN
-    private var userCountryCode: String? = null   // ISO 3166-1, se obtiene via Geocoder
+    private var wasCompassAligned = false          // detectar transición false→true para vibrar
+    private var userCountryCode: String? = null    // ISO 3166-1, se obtiene via Geocoder
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -262,7 +269,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             // ── Modo satélite ─────────────────────────────────────────
             satellite != null -> {
                 val angles = SatelliteCalculator.calculate(
-                    loc.latitude, loc.longitude, satellite.orbitalLon
+                    loc.latitude, loc.longitude, satellite.orbitalLon, loc.altitude
                 )
                 binding.txtBearing.text   = "%03.0f°".format(angles.azimuthDeg)
                 binding.txtElevation.text = "%.1f°".format(angles.elevationDeg)
@@ -326,6 +333,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             if (mode == OrientationManager.Mode.VERTICAL) "VERTICAL" else "HORIZONTAL"
         lastAzimuth = azimuth
         updateBeeper()
+        checkCompassAlignment()
     }
 
     override fun onCalibrationChanged(accuracy: Int) {
@@ -351,6 +359,39 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 dialog.dismiss()
             }
             .show()
+    }
+
+    /** Detecta si el azimut está alineado con el objetivo y vibra al hacer lock */
+    private fun checkCompassAlignment() {
+        if (lastTargetBearing.isNaN()) {
+            wasCompassAligned = false
+            return
+        }
+        val precision = (sharedVm.antennaType.value?.precisionDeg ?: 3f).toDouble()
+        var diff = abs(lastAzimuth.toDouble() - lastTargetBearing)
+        if (diff > 180.0) diff = 360.0 - diff
+        val aligned = diff < precision
+        if (aligned && !wasCompassAligned) vibrateOnLock()
+        wasCompassAligned = aligned
+    }
+
+    /** Patrón de vibración haptic al lograr lock — igual al de AR y Mapa */
+    private fun vibrateOnLock() {
+        val ctx = context ?: return
+        val pattern = longArrayOf(0, 80, 60, 180, 60, 80)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vm = ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vm?.defaultVibrator?.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            val v = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v?.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                v?.vibrate(pattern, -1)
+            }
+        }
     }
 
     private fun updateBeeper() {

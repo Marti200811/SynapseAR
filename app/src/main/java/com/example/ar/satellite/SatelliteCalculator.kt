@@ -18,11 +18,12 @@ object SatelliteCalculator {
     )
 
     /**
-     * @param obsLat   Latitud del observador (grados, + Norte / - Sur)
-     * @param obsLon   Longitud del observador (grados, + Este / - Oeste)
-     * @param satLon   Longitud orbital del satélite (grados, + Este / - Oeste)
+     * @param obsLat    Latitud del observador (grados, + Norte / - Sur)
+     * @param obsLon    Longitud del observador (grados, + Este / - Oeste)
+     * @param satLon    Longitud orbital del satélite (grados, + Este / - Oeste)
+     * @param altitudeM Altitud del observador sobre el nivel del mar (metros, default 0)
      */
-    fun calculate(obsLat: Double, obsLon: Double, satLon: Double): LookAngles {
+    fun calculate(obsLat: Double, obsLon: Double, satLon: Double, altitudeM: Double = 0.0): LookAngles {
 
         val latRad = Math.toRadians(obsLat)
         val B      = Math.toRadians(satLon - obsLon)   // diferencia de longitudes
@@ -31,7 +32,9 @@ object SatelliteCalculator {
         val cosCenter = cos(latRad) * cos(B)
 
         // ── Elevación ────────────────────────────────────────────────
-        val ratio = EARTH_RADIUS_KM / ORBIT_RADIUS_KM   // ≈ 0.15127
+        // Radio del observador incluyendo altitud sobre el nivel del mar
+        val obsRadiusKm = EARTH_RADIUS_KM + (altitudeM / 1000.0)
+        val ratio = obsRadiusKm / ORBIT_RADIUS_KM   // ≈ 0.15127 al nivel del mar
         val el = atan2(cosCenter - ratio, sqrt(1.0 - cosCenter * cosCenter))
         val elDeg = Math.toDegrees(el)
 
