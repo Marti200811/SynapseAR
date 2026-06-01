@@ -12,7 +12,10 @@ import kotlinx.coroutines.launch
  * En Play Console crear:
  *   Tipo: Producto dentro de la app (pago único)
  *   ID del producto: synapse_ar_pro
- *   Precio: $9.99
+ *   Precio base: $9.99
+ *   (Promo de lanzamiento opcional vía "Oferta/Sale" en Play Console.
+ *    El precio mostrado en la app es SIEMPRE el real de Google, así que
+ *    una promo o la moneda local del usuario se reflejan sin tocar código.)
  */
 class BillingManager(
     private val activity: Activity,
@@ -28,6 +31,22 @@ class BillingManager(
         .enablePendingPurchases()
         .build()
 
+    /** Detalles del producto cacheados tras consultar a Google Play. */
+    private var proDetails: ProductDetails? = null
+
+    /** Precio formateado y localizado por Google (ej. "US$9.99", "$2.999,00"). Null si aún no cargó. */
+    var formattedProPrice: String? = null
+        private set
+
+    /** Listener para enterarse cuando el precio está disponible (la UI lo usa para refrescar el botón). */
+    private var onPriceReady: ((String) -> Unit)? = null
+
+    fun setPriceListener(listener: ((String) -> Unit)?) {
+        onPriceReady = listener
+        // Si ya estaba cacheado, avisar de inmediato
+        formattedProPrice?.let { listener?.invoke(it) }
+    }
+
     // ── Conexión ──────────────────────────────────────────────────────────────
 
     fun connect() {
@@ -35,10 +54,40 @@ class BillingManager(
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     restorePurchases()
+                    queryProductDetails()
                 }
             }
             override fun onBillingServiceDisconnected() {}
         })
+    }
+
+    // ── Consultar detalles del producto (precio) ──────────────────────────────
+
+    private fun queryProductDetails() {
+        val productList = listOf(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId(SKU_PRO)
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
+        val params = QueryProductDetailsParams.newBuilder()
+            .setProductList(productList)
+            .build()
+
+        billingClient.queryProductDetailsAsync(params) { result, productDetailsList ->
+            if (result.responseCode == BillingClient.BillingResponseCode.OK &&
+                productDetailsList.isNotEmpty()) {
+
+                val details = productDetailsList[0]
+                proDetails = details
+
+                val price = details.oneTimePurchaseOfferDetails?.formattedPrice
+                if (price != null) {
+                    formattedProPrice = price
+                    activity.runOnUiThread { onPriceReady?.invoke(price) }
+                }
+            }
+        }
     }
 
     // ── Verificar compra previa (restaurar si reinstala) ──────────────────────
@@ -63,10 +112,17 @@ class BillingManager(
     // ── Lanzar flujo de compra única ──────────────────────────────────────────
 
     fun launchPurchase() {
+        // Si ya tenemos los detalles cacheados, lanzar directo
+        proDetails?.let { details ->
+            launchFlow(details)
+            return
+        }
+
+        // Sino, consultar y lanzar cuando llegue la respuesta
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(SKU_PRO)
-                .setProductType(BillingClient.ProductType.INAPP)  // pago único
+                .setProductType(BillingClient.ProductType.INAPP)
                 .build()
         )
         val params = QueryProductDetailsParams.newBuilder()
@@ -76,21 +132,24 @@ class BillingManager(
         billingClient.queryProductDetailsAsync(params) { result, productDetailsList ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK &&
                 productDetailsList.isNotEmpty()) {
-
-                val productDetails = productDetailsList[0]
-
-                val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
-                    .setProductDetails(productDetails)
-                    .build()
-
-                val billingFlowParams = BillingFlowParams.newBuilder()
-                    .setProductDetailsParamsList(listOf(productDetailsParams))
-                    .build()
-
-                activity.runOnUiThread {
-                    billingClient.launchBillingFlow(activity, billingFlowParams)
-                }
+                val details = productDetailsList[0]
+                proDetails = details
+                launchFlow(details)
             }
+        }
+    }
+
+    private fun launchFlow(details: ProductDetails) {
+        val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
+            .setProductDetails(details)
+            .build()
+
+        val billingFlowParams = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(listOf(productDetailsParams))
+            .build()
+
+        activity.runOnUiThread {
+            billingClient.launchBillingFlow(activity, billingFlowParams)
         }
     }
 

@@ -67,7 +67,8 @@
     <string name="upgrade_feature_tdt">📺  Base de datos TDT mundial</string>
     <string name="upgrade_feature_ar">🎯  Pantalla AR con guía visual</string>
     <string name="upgrade_feature_noads">🚫  Sin publicidad</string>
-    <string name="upgrade_btn_buy">✨ Desbloquear Pro — $9.99</string>
+    <string name="upgrade_btn_buy">✨ Desbloquear Pro</string>
+    <string name="upgrade_btn_buy_price">✨ Desbloquear Pro — %1$s</string>
     <string name="upgrade_btn_restore">Restaurar compra anterior</string>
     <string name="upgrade_btn_later">Tal vez después</string>
     <string name="upgrade_trial_note">Pago único. Sin suscripción ni cargos recurrentes.</string>
