@@ -12,7 +12,10 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.ar.databinding.ActivityMainBinding
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
@@ -81,6 +84,12 @@ class MainActivity : AppCompatActivity() {
             binding.adBanner.visibility = if (isPro) View.GONE else View.VISIBLE
         }
 
+        // En debug con DEBUG_FORCE_FREE activo: mostrar snackbar indicador
+        // para confirmar que el modo "usuario gratis" está funcionando.
+        if (BuildConfig.DEBUG && !ProManager.isPro(this)) {
+            Snackbar.make(binding.root, "🆓 FREE MODE activo (DEBUG_FORCE_FREE=true)", Snackbar.LENGTH_LONG).show()
+        }
+
         // ── Consentimiento UMP → inicializar AdMob ────────────────────────
         initAdsWithConsent()
     }
@@ -121,6 +130,19 @@ class MainActivity : AppCompatActivity() {
     private fun initializeMobileAds() {
         if (isMobileAdsInitialized) return
         isMobileAdsInitialized = true
+
+        // En debug: registrar emulador/dispositivo como test device para que
+        // AdMob sirva anuncios de prueba garantizados (evita banner en altura 0).
+        if (BuildConfig.DEBUG) {
+            MobileAds.setRequestConfiguration(
+                RequestConfiguration.Builder()
+                    .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
+                    .build()
+            )
+            // Usar el ad unit ID de test oficial de Google para el banner
+            binding.adBanner.adUnitId = "ca-app-pub-3940256099942544/6300978111"
+            binding.adBanner.setAdSize(AdSize.BANNER)
+        }
 
         MobileAds.initialize(this) {
             // Cargar banner solo si el usuario no es Pro
