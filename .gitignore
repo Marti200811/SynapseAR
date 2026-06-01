@@ -20,3 +20,6 @@ app/build/
 # Keystores (claves de firma - nunca subir)
 *.keystore
 *.jks
+
+# Credenciales de firma (passwords del keystore - nunca subir)
+keystore.properties
