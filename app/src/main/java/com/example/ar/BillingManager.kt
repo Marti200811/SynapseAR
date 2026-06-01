@@ -7,14 +7,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * Maneja la suscripción anual Pro con 7 días de prueba gratuita.
+ * Maneja el pago único Pro.
  *
  * En Play Console crear:
- *   Tipo: Suscripción
+ *   Tipo: Producto dentro de la app (pago único)
  *   ID del producto: synapse_ar_pro
- *   Plan base ID: annual
- *   Precio: $9.99 / año
- *   Oferta: 7 días de prueba gratuita
+ *   Precio: $4.99
  */
 class BillingManager(
     private val activity: Activity,
@@ -43,11 +41,11 @@ class BillingManager(
         })
     }
 
-    // ── Verificar suscripción activa (restaurar si reinstala) ─────────────────
+    // ── Verificar compra previa (restaurar si reinstala) ──────────────────────
 
     fun restorePurchases() {
         val params = QueryPurchasesParams.newBuilder()
-            .setProductType(BillingClient.ProductType.SUBS)   // ← SUBS para suscripciones
+            .setProductType(BillingClient.ProductType.INAPP)   // pago único
             .build()
 
         billingClient.queryPurchasesAsync(params) { result, purchases ->
@@ -62,13 +60,13 @@ class BillingManager(
         }
     }
 
-    // ── Lanzar flujo de suscripción con trial ─────────────────────────────────
+    // ── Lanzar flujo de compra única ──────────────────────────────────────────
 
     fun launchPurchase() {
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(SKU_PRO)
-                .setProductType(BillingClient.ProductType.SUBS)  // ← SUBS
+                .setProductType(BillingClient.ProductType.INAPP)  // pago único
                 .build()
         )
         val params = QueryProductDetailsParams.newBuilder()
@@ -81,19 +79,8 @@ class BillingManager(
 
                 val productDetails = productDetailsList[0]
 
-                // Buscar la oferta con trial gratuito primero, sino usar la primera disponible
-                val offerToken = productDetails.subscriptionOfferDetails
-                    ?.firstOrNull { offer ->
-                        offer.pricingPhases.pricingPhaseList.any { phase ->
-                            phase.priceAmountMicros == 0L  // precio $0 = período de prueba
-                        }
-                    }?.offerToken
-                    ?: productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
-                    ?: return@queryProductDetailsAsync
-
                 val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
                     .setProductDetails(productDetails)
-                    .setOfferToken(offerToken)
                     .build()
 
                 val billingFlowParams = BillingFlowParams.newBuilder()
@@ -107,7 +94,7 @@ class BillingManager(
         }
     }
 
-    // ── Resultado de la suscripción ───────────────────────────────────────────
+    // ── Resultado de la compra ────────────────────────────────────────────────
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
         if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
@@ -122,7 +109,7 @@ class BillingManager(
         }
     }
 
-    // ── Confirmar suscripción (obligatorio para que no se revierta) ───────────
+    // ── Confirmar compra (obligatorio para que no se revierta) ────────────────
 
     private fun acknowledgePurchase(purchase: Purchase) {
         if (!purchase.isAcknowledged) {
