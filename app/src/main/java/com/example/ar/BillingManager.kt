@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
  * En Play Console crear:
  *   Tipo: Producto dentro de la app (pago único)
  *   ID del producto: synapse_ar_pro
- *   Precio: $4.99
+ *   Precio: $9.99
  */
 class BillingManager(
     private val activity: Activity,

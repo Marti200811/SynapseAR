@@ -6,13 +6,11 @@ package com.example.ar.satellite
  */
 object SatelliteDatabase {
 
-    /** Satélites disponibles en la versión gratuita */
+    /** Satélites disponibles en la versión gratuita (uno por región principal) */
     val freeSatelliteNames = setOf(
         "Hispasat 30W-5",      // España / Latinoamérica
         "Astra 1 (19.2°E)",    // Europa
-        "Hot Bird 13E",        // Europa
-        "Intelsat 21",         // Latinoamérica
-        "Star One C2"          // Brasil / Sudamérica
+        "Intelsat 21"          // Latinoamérica
     )
 
     val satellites: List<Satellite> = listOf(
