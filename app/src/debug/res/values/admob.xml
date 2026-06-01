@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    IDs de AdMob para builds DEBUG.
+    Usa los IDs de test oficiales de Google: garantizan anuncios de prueba
+    en cualquier dispositivo/emulador sin registrar device hashes.
+-->
+<resources>
+    <string name="banner_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/6300978111</string>
+</resources>

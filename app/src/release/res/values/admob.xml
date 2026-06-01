@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    IDs de AdMob para builds RELEASE (producción).
+-->
+<resources>
+    <string name="banner_ad_unit_id" translatable="false">ca-app-pub-4092701127898720/8790962068</string>
+</resources>

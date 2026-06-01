@@ -18,8 +18,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Banner AdMob — adUnitId se asigna programáticamente en MainActivity
-         (debug: ID de test de Google / release: ID de producción real) -->
+    <!-- Banner AdMob.
+         adUnitId viene de @string/banner_ad_unit_id, definido por build type:
+           src/debug/res/values/admob.xml   → ID de test de Google
+           src/release/res/values/admob.xml → ID de producción real     -->
     <com.google.android.gms.ads.AdView
         xmlns:ads="http://schemas.android.com/apk/res-auto"
         android:id="@+id/adBanner"
@@ -27,6 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         ads:adSize="BANNER"
+        ads:adUnitId="@string/banner_ad_unit_id"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

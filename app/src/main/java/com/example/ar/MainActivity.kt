@@ -13,21 +13,13 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.ar.databinding.ActivityMainBinding
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        // En debug se usa el ID de test oficial de Google: sirve anuncios de
-        // prueba en cualquier dispositivo/emulador sin necesitar un device hash.
-        // En release se usa el ID de producción real.
-        private const val BANNER_AD_UNIT_DEBUG = "ca-app-pub-3940256099942544/6300978111"
-        private const val BANNER_AD_UNIT_PROD  = "ca-app-pub-4092701127898720/8790962068"
-        val BANNER_AD_UNIT = if (BuildConfig.DEBUG) BANNER_AD_UNIT_DEBUG else BANNER_AD_UNIT_PROD
-    }
 
     private lateinit var binding: ActivityMainBinding
     private val sharedVm: SharedViewModel by viewModels()
@@ -43,10 +35,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Asignar ad unit ID antes de cualquier operación con el banner.
-        // El XML no tiene adUnitId para poder diferenciarlo entre debug y release.
-        binding.adBanner.adUnitId = BANNER_AD_UNIT
 
         // ── Edge-to-edge: el sistema dibuja detrás de status y nav bar ───────
         // Aplicamos insets manualmente para que el contenido no quede tapado
@@ -141,6 +129,19 @@ class MainActivity : AppCompatActivity() {
     private fun initializeMobileAds() {
         if (isMobileAdsInitialized) return
         isMobileAdsInitialized = true
+
+        // En debug: registrar emulador y dispositivo físico de desarrollo como
+        // test devices para que AdMob sirva anuncios de prueba reales.
+        if (BuildConfig.DEBUG) {
+            MobileAds.setRequestConfiguration(
+                RequestConfiguration.Builder()
+                    .setTestDeviceIds(listOf(
+                        AdRequest.DEVICE_ID_EMULATOR,
+                        "2DBF6E008A7DA07D85064E66C5BBF4D5"  // Moto G15
+                    ))
+                    .build()
+            )
+        }
 
         MobileAds.initialize(this) {
             // Cargar banner solo si el usuario no es Pro
