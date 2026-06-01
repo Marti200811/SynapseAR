@@ -12,7 +12,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.ar.databinding.ActivityMainBinding
 import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.material.snackbar.Snackbar
@@ -131,17 +130,15 @@ class MainActivity : AppCompatActivity() {
         if (isMobileAdsInitialized) return
         isMobileAdsInitialized = true
 
-        // En debug: registrar emulador/dispositivo como test device para que
-        // AdMob sirva anuncios de prueba garantizados (evita banner en altura 0).
+        // En debug: registrar emulador como test device para que AdMob sirva
+        // anuncios de prueba garantizados (así el banner tiene altura real y es visible).
+        // NO reasignamos adUnitId: ya viene seteado desde el XML y cambiarlo crashea.
         if (BuildConfig.DEBUG) {
             MobileAds.setRequestConfiguration(
                 RequestConfiguration.Builder()
                     .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
                     .build()
             )
-            // Usar el ad unit ID de test oficial de Google para el banner
-            binding.adBanner.adUnitId = "ca-app-pub-3940256099942544/6300978111"
-            binding.adBanner.setAdSize(AdSize.BANNER)
         }
 
         MobileAds.initialize(this) {
