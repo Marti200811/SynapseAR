@@ -55,23 +55,25 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setupWithNavController(navController)
 
-        // Bloquear tab AR si no es Pro (en debug siempre permitido)
+        // Bloquear tab AR si no es Pro.
+        // Usa sharedVm.isPro como única fuente de verdad: así respeta
+        // también el toggle DEBUG_FORCE_FREE en builds de desarrollo.
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (destination.id == R.id.arFragment
-                && !BuildConfig.DEBUG
                 && sharedVm.isPro.value != true) {
                 navController.popBackStack()
                 showUpgradeDialog()
             }
         }
 
-        // Billing — en debug ignoramos el resultado para no sobreescribir isPro=true
+        // Billing: en release actualiza el estado Pro desde Google Play.
+        // En debug, ProManager.isPro() ya maneja DEBUG_FORCE_FREE → no pisamos.
         billingManager = BillingManager(this) { isPro ->
             if (!BuildConfig.DEBUG) sharedVm.isPro.postValue(isPro)
         }
         billingManager.connect()
 
-        // Inicializar isPro desde caché local (debug siempre true)
+        // Inicializar isPro desde caché local (respeta DEBUG_FORCE_FREE en debug)
         sharedVm.isPro.value = ProManager.isPro(this)
 
         // Ocultar banner si es Pro
