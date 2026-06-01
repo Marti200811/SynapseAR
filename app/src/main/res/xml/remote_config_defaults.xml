@@ -8,10 +8,30 @@
         N  = forzar actualización immediate si versionCode instalado < N
         Ejemplo: si publicas el versionCode 3 con un fix crítico,
                  setea este valor a 3 en la consola de Firebase.
+
+    promo_active:
+        false = sin promoción (precio normal, sin tachado)
+        true  = promoción de lanzamiento activa → muestra precio ancla tachado
+        IMPORTANTE: prendelo SOLO cuando el precio en Play Console esté
+        realmente rebajado (sino el tachado sería engañoso → política de Play).
+
+    promo_discount_percent:
+        % de descuento real de la promo (1-99). Se usa para calcular el
+        precio ancla tachado a partir del precio actual de Google, en la
+        moneda local del usuario.
+        Ejemplo: precio base $9.99, promo a $4.99 → poné 50.
 -->
 <defaultsMap>
     <entry>
         <key>force_update_version</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>promo_active</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>promo_discount_percent</key>
         <value>0</value>
     </entry>
 </defaultsMap>

@@ -38,6 +38,14 @@ class BillingManager(
     var formattedProPrice: String? = null
         private set
 
+    /** Precio en micros (1.000.000 = 1 unidad de moneda). 0 si aún no cargó. */
+    var proPriceMicros: Long = 0L
+        private set
+
+    /** Código de moneda ISO 4217 del precio (ej. "USD", "ARS", "EUR"). Null si aún no cargó. */
+    var proPriceCurrencyCode: String? = null
+        private set
+
     /** Listener para enterarse cuando el precio está disponible (la UI lo usa para refrescar el botón). */
     private var onPriceReady: ((String) -> Unit)? = null
 
@@ -81,9 +89,12 @@ class BillingManager(
                 val details = productDetailsList[0]
                 proDetails = details
 
-                val price = details.oneTimePurchaseOfferDetails?.formattedPrice
+                val offer = details.oneTimePurchaseOfferDetails
+                val price = offer?.formattedPrice
                 if (price != null) {
                     formattedProPrice = price
+                    proPriceMicros = offer.priceAmountMicros
+                    proPriceCurrencyCode = offer.priceCurrencyCode
                     activity.runOnUiThread { onPriceReady?.invoke(price) }
                 }
             }

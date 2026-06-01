@@ -2,6 +2,10 @@ package com.example.ar
 
 import android.app.Dialog
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.RelativeSizeSpan
+import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
@@ -46,12 +50,35 @@ class UpgradeDialog : DialogFragment() {
             .create()
     }
 
-    /** Si hay precio, mostrarlo en el botón; sino texto genérico (fallback). */
+    /**
+     * Muestra el precio en el botón. Si hay una promo de lanzamiento activa
+     * (Remote Config), antepone el precio "normal" tachado (precio ancla),
+     * un clásico de la estrategia de ventas.
+     */
     private fun applyPrice(price: String?) {
-        btnBuy?.text = if (!price.isNullOrBlank()) {
-            getString(R.string.upgrade_btn_buy_price, price)
+        val btn = btnBuy ?: return
+
+        if (price.isNullOrBlank()) {
+            btn.text = getString(R.string.upgrade_btn_buy)   // fallback sin precio
+            return
+        }
+
+        val bm = billingManager
+        val anchor = bm?.let {
+            PromoManager.anchorPrice(it.proPriceMicros, it.proPriceCurrencyCode)
+        }
+
+        if (anchor != null) {
+            // "✨ Desbloquear Pro — $9.98  $4.99"  (con $9.98 tachado y más chico)
+            val sb = SpannableStringBuilder(getString(R.string.upgrade_btn_buy)).append(" — ")
+            val start = sb.length
+            sb.append(anchor)
+            sb.setSpan(StrikethroughSpan(), start, sb.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sb.setSpan(RelativeSizeSpan(0.85f), start, sb.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sb.append("  ").append(price)
+            btn.text = sb
         } else {
-            getString(R.string.upgrade_btn_buy)
+            btn.text = getString(R.string.upgrade_btn_buy_price, price)
         }
     }
 
