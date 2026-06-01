@@ -36,7 +36,13 @@ class ProximityBeeper {
 
     fun start() {
         if (isRunning) return
-        toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 85)
+        // W12: ToneGenerator puede lanzar RuntimeException si el sistema de audio
+        // no está disponible (llamada en curso, modo avión en algunos dispositivos).
+        toneGen = try {
+            ToneGenerator(AudioManager.STREAM_MUSIC, 85)
+        } catch (e: RuntimeException) {
+            null  // sin audio: beeper desactivado silenciosamente
+        }
         isRunning = true
         currentIntervalMs = -2L
     }

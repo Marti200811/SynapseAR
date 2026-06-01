@@ -54,6 +54,12 @@ class WifiScanner(private val context: Context) {
     private val scanRunnable = object : Runnable {
         override fun run() {
             if (!isMonitoring) return
+            // W11: verificar que el WiFi esté habilitado antes de escanear
+            if (!wifiManager.isWifiEnabled) {
+                listener?.onNetworksFound(emptyList())
+                handler.postDelayed(this, 2500)
+                return
+            }
             @Suppress("DEPRECATION")
             wifiManager.startScan()
             handler.postDelayed(this, 2500)

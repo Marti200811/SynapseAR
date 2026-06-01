@@ -41,7 +41,8 @@ class WifiScannerDialog(
         rv.layoutManager = LinearLayoutManager(requireContext())
         rv.adapter = adapter
 
-        // Verificar permiso de ubicación (requerido para escanear WiFi en Android 9+)
+        // W01: verificar permiso ANTES de iniciar el scanner — sin permiso, startScan()
+        // lanza SecurityException en Android 6+. Si no tiene permiso, mostrar mensaje y salir.
         val hasLocation = ContextCompat.checkSelfPermission(
             requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
@@ -50,6 +51,10 @@ class WifiScannerDialog(
             Toast.makeText(requireContext(),
                 getString(R.string.wifi_no_permission),
                 Toast.LENGTH_LONG).show()
+            // No iniciar el scanner sin permiso — devolver diálogo vacío
+            return MaterialAlertDialogBuilder(requireContext())
+                .setView(view)
+                .create()
         }
 
         scanner = WifiScanner(requireContext()).also { it.listener = this }

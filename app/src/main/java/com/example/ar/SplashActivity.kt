@@ -13,6 +13,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
 
@@ -30,7 +33,7 @@ class SplashActivity : AppCompatActivity() {
         val company   = findViewById<TextView>(R.id.splashCompany)
         val version   = findViewById<TextView>(R.id.splashVersion)
 
-        // ── 1. Pulso de fondo (expand + fade out, en loop 2 veces) ────────────
+        // ── 1. Pulso de fondo (expand + fade out) ────────────────────────────
         val pulseScale = AnimatorSet().apply {
             playTogether(
                 ObjectAnimator.ofFloat(pulse, View.SCALE_X, 0.3f, 1.4f).apply { duration = 900 },
@@ -93,32 +96,41 @@ class SplashActivity : AppCompatActivity() {
         companyAnim.start()
         versionAnim.start()
 
-        // ── 8. Segundo pulso a los 900ms ─────────────────────────────────────
-        pulse.postDelayed({
-            pulse.scaleX = 0.3f; pulse.scaleY = 0.3f; pulse.alpha = 0.6f
-            AnimatorSet().apply {
-                playTogether(
-                    ObjectAnimator.ofFloat(pulse, View.SCALE_X, 0.3f, 1.6f).apply { duration = 1000 },
-                    ObjectAnimator.ofFloat(pulse, View.SCALE_Y, 0.3f, 1.6f).apply { duration = 1000 },
-                    ObjectAnimator.ofFloat(pulse, View.ALPHA,  0.5f, 0f).apply    { duration = 1000 }
-                )
-                interpolator = DecelerateInterpolator()
-            }.start()
-        }, 950)
-
-        // ── 9. Fade out y lanzar MainActivity a los 2.8s ─────────────────────
-        root.postDelayed({
-            ObjectAnimator.ofFloat(root, View.ALPHA, 1f, 0f).apply {
-                duration = 400
-                interpolator = AccelerateDecelerateInterpolator()
-                start()
+        // ── 8. Segundo pulso + navegación a MainActivity ──────────────────────
+        // C08: usar lifecycleScope.launch en lugar de postDelayed — se cancela
+        // automáticamente si la Activity es destruida (swipe en Recents, etc.)
+        lifecycleScope.launch {
+            // Segundo pulso a los 900ms
+            delay(950)
+            if (!isDestroyed) {
+                pulse.scaleX = 0.3f; pulse.scaleY = 0.3f; pulse.alpha = 0.6f
+                AnimatorSet().apply {
+                    playTogether(
+                        ObjectAnimator.ofFloat(pulse, View.SCALE_X, 0.3f, 1.6f).apply { duration = 1000 },
+                        ObjectAnimator.ofFloat(pulse, View.SCALE_Y, 0.3f, 1.6f).apply { duration = 1000 },
+                        ObjectAnimator.ofFloat(pulse, View.ALPHA,  0.5f, 0f).apply    { duration = 1000 }
+                    )
+                    interpolator = DecelerateInterpolator()
+                }.start()
             }
-            root.postDelayed({
-                startActivity(Intent(this, MainActivity::class.java))
-                finish()
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            }, 380)
-        }, 2800)
+
+            // Fade out y lanzar MainActivity a los 2.8s
+            delay(1850)  // 950 + 1850 = 2800ms total
+            if (!isDestroyed) {
+                ObjectAnimator.ofFloat(root, View.ALPHA, 1f, 0f).apply {
+                    duration = 400
+                    interpolator = AccelerateDecelerateInterpolator()
+                    start()
+                }
+                delay(380)
+                if (!isDestroyed) {
+                    startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                    finish()
+                    @Suppress("DEPRECATION")
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                }
+            }
+        }
     }
 
     // Evitar que el botón atrás cierre el splash

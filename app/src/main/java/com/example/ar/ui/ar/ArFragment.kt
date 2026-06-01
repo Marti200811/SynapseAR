@@ -156,18 +156,21 @@ class ArFragment : Fragment(), OrientationManager.Listener {
     // ── Sensores → Overlay ────────────────────────────────────────────────────
 
     override fun onOrientation(azimuth: Float, pitch: Float, roll: Float, mode: OrientationManager.Mode) {
+        // C06: guard contra NPE si el sensor dispara después de onDestroyView
+        val b = _binding ?: return
         lastAzimuth = azimuth
-        binding.arOverlay.azimuth        = azimuth
-        binding.arOverlay.pitch          = pitch
-        binding.arOverlay.roll           = roll
-        binding.arOverlay.isVerticalMode = (mode == OrientationManager.Mode.VERTICAL)
+        b.arOverlay.azimuth        = azimuth
+        b.arOverlay.pitch          = pitch
+        b.arOverlay.roll           = roll
+        b.arOverlay.isVerticalMode = (mode == OrientationManager.Mode.VERTICAL)
         updateAligned()
         updateBeeper()
     }
 
     override fun onCalibrationChanged(accuracy: Int) {
-        binding.arOverlay.calibrationLevel = accuracy
-        // Mostrar diálogo de calibración si la precisión es baja o nula
+        // C07: guard contra NPE si el sensor dispara después de onDestroyView
+        val b = _binding ?: return
+        b.arOverlay.calibrationLevel = accuracy
         if (accuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
             showCalibrationHint()
         }

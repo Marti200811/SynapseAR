@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.view.Surface
 import android.view.WindowManager
 import kotlin.math.abs
@@ -55,11 +56,15 @@ class OrientationManager(private val context: Context) : SensorEventListener {
 
         SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 
-        @Suppress("DEPRECATION")
-        val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
-            .defaultDisplay
+        // W04: defaultDisplay deprecado en API 30, lanza excepción en Android 13+ en algunos OEMs
+        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.display?.rotation ?: Surface.ROTATION_0
+        } else {
+            @Suppress("DEPRECATION")
+            (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation
+        }
 
-        val (axisX, axisY) = when (display.rotation) {
+        val (axisX, axisY) = when (rotation) {
             Surface.ROTATION_90  -> SensorManager.AXIS_Y  to SensorManager.AXIS_MINUS_X
             Surface.ROTATION_180 -> SensorManager.AXIS_MINUS_X to SensorManager.AXIS_MINUS_Y
             Surface.ROTATION_270 -> SensorManager.AXIS_MINUS_Y to SensorManager.AXIS_X

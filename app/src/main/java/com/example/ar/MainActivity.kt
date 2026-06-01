@@ -144,9 +144,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         MobileAds.initialize(this) {
-            // Cargar banner solo si el usuario no es Pro
-            if (sharedVm.isPro.value != true) {
-                binding.adBanner.loadAd(AdRequest.Builder().build())
+            // M01: el callback puede llegar desde un background thread — postear a UI
+            runOnUiThread {
+                if (sharedVm.isPro.value != true) {
+                    binding.adBanner.loadAd(AdRequest.Builder().build())
+                }
             }
         }
     }

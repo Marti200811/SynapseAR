@@ -1,9 +1,13 @@
 package com.example.ar
 
 import android.app.Activity
+import android.os.Handler
+import android.os.Looper
 import com.android.billingclient.api.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
@@ -13,9 +17,6 @@ import kotlinx.coroutines.launch
  *   Tipo: Producto dentro de la app (pago único)
  *   ID del producto: synapse_ar_pro
  *   Precio base: $9.99
- *   (Promo de lanzamiento opcional vía "Oferta/Sale" en Play Console.
- *    El precio mostrado en la app es SIEMPRE el real de Google, así que
- *    una promo o la moneda local del usuario se reflejan sin tocar código.)
  */
 class BillingManager(
     private val activity: Activity,
@@ -24,7 +25,12 @@ class BillingManager(
 
     companion object {
         const val SKU_PRO = "synapse_ar_pro"
+        private const val RECONNECT_DELAY_MS = 5_000L
     }
+
+    // Scope propio — se cancela en disconnect() para no dejar coroutines huérfanas (C01)
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val billingClient: BillingClient = BillingClient.newBuilder(activity)
         .setListener(this)
@@ -34,24 +40,22 @@ class BillingManager(
     /** Detalles del producto cacheados tras consultar a Google Play. */
     private var proDetails: ProductDetails? = null
 
-    /** Precio formateado y localizado por Google (ej. "US$9.99", "$2.999,00"). Null si aún no cargó. */
+    /** Precio formateado y localizado por Google (ej. "US$9.99"). Null si aún no cargó. */
     var formattedProPrice: String? = null
         private set
 
-    /** Precio en micros (1.000.000 = 1 unidad de moneda). 0 si aún no cargó. */
+    /** Precio en micros (1.000.000 = 1 unidad de moneda). */
     var proPriceMicros: Long = 0L
         private set
 
-    /** Código de moneda ISO 4217 del precio (ej. "USD", "ARS", "EUR"). Null si aún no cargó. */
+    /** Código de moneda ISO 4217 (ej. "USD", "ARS"). */
     var proPriceCurrencyCode: String? = null
         private set
 
-    /** Listener para enterarse cuando el precio está disponible (la UI lo usa para refrescar el botón). */
     private var onPriceReady: ((String) -> Unit)? = null
 
     fun setPriceListener(listener: ((String) -> Unit)?) {
         onPriceReady = listener
-        // Si ya estaba cacheado, avisar de inmediato
         formattedProPrice?.let { listener?.invoke(it) }
     }
 
@@ -65,37 +69,39 @@ class BillingManager(
                     queryProductDetails()
                 }
             }
-            override fun onBillingServiceDisconnected() {}
+            override fun onBillingServiceDisconnected() {
+                // M02: reconexión automática con delay (el servicio de Play Store puede caerse)
+                mainHandler.postDelayed({ connect() }, RECONNECT_DELAY_MS)
+            }
         })
     }
 
     // ── Consultar detalles del producto (precio) ──────────────────────────────
 
     private fun queryProductDetails() {
-        val productList = listOf(
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(SKU_PRO)
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build()
-        )
         val params = QueryProductDetailsParams.newBuilder()
-            .setProductList(productList)
-            .build()
+            .setProductList(listOf(
+                QueryProductDetailsParams.Product.newBuilder()
+                    .setProductId(SKU_PRO)
+                    .setProductType(BillingClient.ProductType.INAPP)
+                    .build()
+            )).build()
 
         billingClient.queryProductDetailsAsync(params) { result, productDetailsList ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK &&
                 productDetailsList.isNotEmpty()) {
-
                 val details = productDetailsList[0]
                 proDetails = details
-
                 val offer = details.oneTimePurchaseOfferDetails
                 val price = offer?.formattedPrice
                 if (price != null) {
                     formattedProPrice = price
                     proPriceMicros = offer.priceAmountMicros
                     proPriceCurrencyCode = offer.priceCurrencyCode
-                    activity.runOnUiThread { onPriceReady?.invoke(price) }
+                    // C02: verificar que la activity siga viva antes de postear a UI
+                    if (!activity.isDestroyed && !activity.isFinishing) {
+                        activity.runOnUiThread { onPriceReady?.invoke(price) }
+                    }
                 }
             }
         }
@@ -105,7 +111,7 @@ class BillingManager(
 
     fun restorePurchases() {
         val params = QueryPurchasesParams.newBuilder()
-            .setProductType(BillingClient.ProductType.INAPP)   // pago único
+            .setProductType(BillingClient.ProductType.INAPP)
             .build()
 
         billingClient.queryPurchasesAsync(params) { result, purchases ->
@@ -123,76 +129,93 @@ class BillingManager(
     // ── Lanzar flujo de compra única ──────────────────────────────────────────
 
     fun launchPurchase() {
-        // Si ya tenemos los detalles cacheados, lanzar directo
-        proDetails?.let { details ->
-            launchFlow(details)
-            return
-        }
+        proDetails?.let { launchFlow(it); return }
 
-        // Sino, consultar y lanzar cuando llegue la respuesta
-        val productList = listOf(
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(SKU_PRO)
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build()
-        )
         val params = QueryProductDetailsParams.newBuilder()
-            .setProductList(productList)
-            .build()
+            .setProductList(listOf(
+                QueryProductDetailsParams.Product.newBuilder()
+                    .setProductId(SKU_PRO)
+                    .setProductType(BillingClient.ProductType.INAPP)
+                    .build()
+            )).build()
 
         billingClient.queryProductDetailsAsync(params) { result, productDetailsList ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK &&
                 productDetailsList.isNotEmpty()) {
-                val details = productDetailsList[0]
-                proDetails = details
-                launchFlow(details)
+                proDetails = productDetailsList[0]
+                launchFlow(productDetailsList[0])
             }
         }
     }
 
     private fun launchFlow(details: ProductDetails) {
-        val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
-            .setProductDetails(details)
-            .build()
-
         val billingFlowParams = BillingFlowParams.newBuilder()
-            .setProductDetailsParamsList(listOf(productDetailsParams))
-            .build()
+            .setProductDetailsParamsList(listOf(
+                BillingFlowParams.ProductDetailsParams.newBuilder()
+                    .setProductDetails(details)
+                    .build()
+            )).build()
 
-        activity.runOnUiThread {
-            billingClient.launchBillingFlow(activity, billingFlowParams)
+        // C02: verificar activity viva antes de postear a UI
+        if (!activity.isDestroyed && !activity.isFinishing) {
+            activity.runOnUiThread {
+                billingClient.launchBillingFlow(activity, billingFlowParams)
+            }
         }
     }
 
     // ── Resultado de la compra ────────────────────────────────────────────────
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
-        if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-            purchases.forEach { purchase ->
-                if (purchase.products.contains(SKU_PRO) &&
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                    acknowledgePurchase(purchase)
-                    ProManager.setPro(activity, true)
-                    onProStatusChanged(true)
+        when (result.responseCode) {
+            BillingClient.BillingResponseCode.OK -> {
+                purchases?.forEach { purchase ->
+                    when (purchase.purchaseState) {
+                        Purchase.PurchaseState.PURCHASED -> {
+                            if (purchase.products.contains(SKU_PRO)) {
+                                acknowledgePurchase(purchase)
+                                ProManager.setPro(activity, true)
+                                onProStatusChanged(true)
+                            }
+                        }
+                        Purchase.PurchaseState.PENDING -> {
+                            // C03: compra pendiente (pago en efectivo, etc.) — no otorgar Pro todavía
+                            // El usuario verá el estado actualizado en la próxima apertura
+                        }
+                        else -> Unit
+                    }
                 }
             }
+            // C03: si ya lo compró (ej. reinstalación), restaurar en lugar de ignorar
+            BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> restorePurchases()
+            BillingClient.BillingResponseCode.USER_CANCELED -> Unit  // no-op intencional
+            else -> Unit  // otros errores de red / sistema, no fatales
         }
     }
 
-    // ── Confirmar compra (obligatorio para que no se revierta) ────────────────
+    // ── Confirmar compra (obligatorio para que no se revierta a los 3 días) ───
 
     private fun acknowledgePurchase(purchase: Purchase) {
-        if (!purchase.isAcknowledged) {
-            val params = AcknowledgePurchaseParams.newBuilder()
-                .setPurchaseToken(purchase.purchaseToken)
-                .build()
-            CoroutineScope(Dispatchers.IO).launch {
-                billingClient.acknowledgePurchase(params)
+        if (purchase.isAcknowledged) return
+        // C01: usar el scope propio (se cancela en disconnect()) y verificar el resultado
+        scope.launch {
+            val result = billingClient.acknowledgePurchase(
+                AcknowledgePurchaseParams.newBuilder()
+                    .setPurchaseToken(purchase.purchaseToken)
+                    .build()
+            )
+            if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                // Fallo silencioso: Google revertirá la compra a los 3 días.
+                // En una versión futura: guardar el token y reintentar.
+                android.util.Log.e("BillingManager",
+                    "acknowledgePurchase failed: ${result.responseCode} ${result.debugMessage}")
             }
         }
     }
 
     fun disconnect() {
+        mainHandler.removeCallbacksAndMessages(null)  // cancelar reconexión pendiente
+        scope.cancel()                                 // C01: cancelar coroutines huérfanas
         billingClient.endConnection()
     }
 }

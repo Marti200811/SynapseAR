@@ -67,11 +67,14 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             updateReadouts()
             // Obtener código de país en background (solo si aún no lo tenemos)
             if (userCountryCode == null) {
+                // W07: usar applicationContext (no requireContext) para evitar
+                // IllegalStateException si el fragment se destruye durante la IO
+                val appCtx = context?.applicationContext ?: return
                 viewLifecycleOwner.lifecycleScope.launch {
                     userCountryCode = withContext(Dispatchers.IO) {
                         try {
                             @Suppress("DEPRECATION")
-                            Geocoder(requireContext(), Locale.getDefault())
+                            Geocoder(appCtx, Locale.getDefault())
                                 .getFromLocation(loc.latitude, loc.longitude, 1)
                                 ?.firstOrNull()?.countryCode
                         } catch (e: Exception) { null }
@@ -324,12 +327,14 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     override fun onOrientation(
         azimuth: Float, pitch: Float, roll: Float, mode: OrientationManager.Mode
     ) {
-        binding.compass.azimuth = azimuth
-        binding.compass.pitch   = pitch
-        binding.compass.mode    =
+        // C04: guard contra NPE si el sensor dispara después de onDestroyView
+        val b = _binding ?: return
+        b.compass.azimuth = azimuth
+        b.compass.pitch   = pitch
+        b.compass.mode    =
             if (mode == OrientationManager.Mode.VERTICAL) CompassView.Mode.VERTICAL
             else CompassView.Mode.HORIZONTAL
-        binding.modeBadge.text =
+        b.modeBadge.text =
             if (mode == OrientationManager.Mode.VERTICAL) "VERTICAL" else "HORIZONTAL"
         lastAzimuth = azimuth
         updateBeeper()
@@ -337,7 +342,9 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     }
 
     override fun onCalibrationChanged(accuracy: Int) {
-        binding.compass.calibrationLevel = accuracy
+        // C05: guard contra NPE si el sensor dispara después de onDestroyView
+        val b = _binding ?: return
+        b.compass.calibrationLevel = accuracy
         if (accuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
             if (parentFragmentManager.findFragmentByTag("calib") == null) {
                 CalibrationDialog().show(parentFragmentManager, "calib")
