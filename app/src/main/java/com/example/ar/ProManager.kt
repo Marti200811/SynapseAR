@@ -13,9 +13,18 @@ object ProManager {
     private const val PREFS = "synapse_prefs"   // mismo archivo que SettingsManager
     private const val KEY_PRO = "is_pro"
 
+    /**
+     * SOLO PARA DESARROLLO. Ponelo en `true` para ver la app como usuario
+     * GRATIS aunque estés en un build debug (probar candados, banner, los
+     * 3 satélites gratis, el diálogo de upgrade, etc.).
+     * Dejalo en `false` normalmente → debug = Pro (ves todas las funciones).
+     */
+    private const val DEBUG_FORCE_FREE = false
+
     fun isPro(context: Context): Boolean {
-        // En debug siempre Pro para poder probar todas las funciones
-        if (BuildConfig.DEBUG) return true
+        // En debug, Pro por defecto para poder probar todas las funciones.
+        // Si DEBUG_FORCE_FREE = true, forzamos la experiencia gratuita.
+        if (BuildConfig.DEBUG) return !DEBUG_FORCE_FREE
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getBoolean(KEY_PRO, false)
     }
