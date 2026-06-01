@@ -18,7 +18,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Banner AdMob (50 dp de alto, casi invisible, entre contenido y nav) -->
+    <!-- Banner AdMob — adUnitId se asigna programáticamente en MainActivity
+         (debug: ID de test de Google / release: ID de producción real) -->
     <com.google.android.gms.ads.AdView
         xmlns:ads="http://schemas.android.com/apk/res-auto"
         android:id="@+id/adBanner"
@@ -26,7 +27,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         ads:adSize="BANNER"
-        ads:adUnitId="ca-app-pub-4092701127898720/8790962068"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
