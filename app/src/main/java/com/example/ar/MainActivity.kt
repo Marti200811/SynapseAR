@@ -36,6 +36,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Mantener pantalla activa durante toda la sesión (app de trabajo profesional)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         // ── Edge-to-edge: el sistema dibuja detrás de status y nav bar ───────
         // Aplicamos insets manualmente para que el contenido no quede tapado
         WindowCompat.setDecorFitsSystemWindows(window, false)

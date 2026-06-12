@@ -254,7 +254,83 @@ object TdtDatabase {
         // SUDÁFRICA  (DVB-T2)
         // ══════════════════════════════════════════════════════
         TdtTransmitter("Brixton Tower", "Johannesburgo", "ZA", "DVB-T2", -26.2041, 28.0473, 100.0),
-        TdtTransmitter("Cape Town Signal Hill", "Ciudad del Cabo", "ZA", "DVB-T2", -33.9249, 18.4241, 50.0)
+        TdtTransmitter("Cape Town Signal Hill", "Ciudad del Cabo", "ZA", "DVB-T2", -33.9249, 18.4241, 50.0),
+
+        // ══════════════════════════════════════════════════════
+        // CENTROAMÉRICA  (ISDB-Tb / ATSC)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Cerro Candelaria", "Guatemala Ciudad", "GT", "ISDB-Tb", 14.5833, -90.5222, 10.0),
+        TdtTransmitter("San Salvador Centro", "San Salvador", "SV", "ISDB-Tb", 13.6929, -89.2182, 10.0),
+        TdtTransmitter("Tegucigalpa Centro", "Tegucigalpa", "HN", "ISDB-Tb", 14.0818, -87.2068, 10.0),
+        TdtTransmitter("Managua Centro", "Managua", "NI", "ISDB-Tb", 12.1328, -86.2504, 10.0),
+        TdtTransmitter("San José Cerro Zurquí", "San José", "CR", "ISDB-Tb", 10.0357, -84.0124, 10.0),
+        TdtTransmitter("Ciudad de Panamá", "Panamá", "PA", "ISDB-Tb", 8.9936, -79.5197, 10.0),
+        TdtTransmitter("Santo Domingo", "Santo Domingo", "DO", "ATSC", 18.4861, -69.9312, 20.0),
+        TdtTransmitter("Havana Centro", "La Habana", "CU", "ATSC", 23.1367, -82.3589, 20.0),
+
+        // ══════════════════════════════════════════════════════
+        // RUSIA  (DVB-T2)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Ostankino Tower", "Moscú", "RU", "DVB-T2", 55.8197, 37.6118, 250.0),
+        TdtTransmitter("Ekaterinburg Tower", "Ekaterimburgo", "RU", "DVB-T2", 56.8389, 60.5975, 100.0),
+        TdtTransmitter("Novosibirsk Tower", "Novosibirsk", "RU", "DVB-T2", 54.9833, 82.8964, 100.0),
+        TdtTransmitter("Kazan Tower", "Kazán", "RU", "DVB-T2", 55.7887, 49.1221, 100.0),
+        TdtTransmitter("Saint Petersburg Tower", "San Petersburgo", "RU", "DVB-T2", 59.9311, 30.3609, 100.0),
+
+        // ══════════════════════════════════════════════════════
+        // PAÍSES NÓRDICOS  (DVB-T2)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Tryvannstårnet", "Oslo", "NO", "DVB-T2", 59.9724, 10.6820, 100.0),
+        TdtTransmitter("Södra Kaknästornet", "Estocolmo", "SE", "DVB-T2", 59.3328, 18.1195, 100.0),
+        TdtTransmitter("Gladsaxe Tower", "Copenhague", "DK", "DVB-T2", 55.7307, 12.4561, 100.0),
+        TdtTransmitter("Digita Espoo", "Helsinki", "FI", "DVB-T2", 60.2052, 24.6556, 100.0),
+
+        // ══════════════════════════════════════════════════════
+        // EUROPA DEL ESTE  (DVB-T2)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Pałac Kultury", "Varsovia", "PL", "DVB-T2", 52.2319, 21.0067, 100.0),
+        TdtTransmitter("Žižkov Tower", "Praga", "CZ", "DVB-T2", 50.0790, 14.4513, 100.0),
+        TdtTransmitter("Piszkéstető", "Budapest", "HU", "DVB-T2", 47.9178, 19.8950, 50.0),
+        TdtTransmitter("Dumbrava Rosie", "Bucarest", "RO", "DVB-T2", 44.4268, 26.1025, 100.0),
+        TdtTransmitter("Sofia TV Tower", "Sofía", "BG", "DVB-T2", 42.6977, 23.3219, 100.0),
+        TdtTransmitter("Zagreb Sljeme", "Zagreb", "HR", "DVB-T2", 45.8958, 15.9780, 50.0),
+        TdtTransmitter("Belgrade Tower", "Belgrado", "RS", "DVB-T2", 44.8033, 20.4651, 100.0),
+
+        // ══════════════════════════════════════════════════════
+        // TURQUÍA  (DVB-T2)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Çamlıca Tower", "Estambul", "TR", "DVB-T2", 41.0272, 29.0628, 100.0),
+        TdtTransmitter("Ankara Transmitter", "Ankara", "TR", "DVB-T2", 39.9334, 32.8597, 50.0),
+        TdtTransmitter("Izmir Tower", "Izmir", "TR", "DVB-T2", 38.4192, 27.1287, 50.0),
+
+        // ══════════════════════════════════════════════════════
+        // ORIENTE MEDIO  (DVB-T2)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Riyadh Transmitter", "Riad", "SA", "DVB-T2", 24.6877, 46.7219, 50.0),
+        TdtTransmitter("Dubai Transmitter", "Dubái", "AE", "DVB-T2", 25.2048, 55.2708, 50.0),
+        TdtTransmitter("Cairo Tower", "El Cairo", "EG", "DVB-T2", 30.0626, 31.2243, 100.0),
+        TdtTransmitter("Jerusalem Tower", "Tel Aviv / Israel", "IL", "DVB-T2", 32.0853, 34.7818, 50.0),
+
+        // ══════════════════════════════════════════════════════
+        // OTROS PAÍSES DE AFRICA  (DVB-T2)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Lagos Transmitter", "Lagos", "NG", "DVB-T2", 6.5244, 3.3792, 100.0),
+        TdtTransmitter("Nairobi Hill", "Nairobi", "KE", "DVB-T2", -1.2921, 36.8219, 50.0),
+        TdtTransmitter("Addis Ababa Tower", "Addis Abeba", "ET", "DVB-T2", 9.0320, 38.7469, 50.0),
+        TdtTransmitter("Casablanca Tower", "Casablanca", "MA", "DVB-T2", 33.5731, -7.5898, 50.0),
+        TdtTransmitter("Algiers Tower", "Argel", "DZ", "DVB-T2", 36.7372, 3.0868, 50.0),
+
+        // ══════════════════════════════════════════════════════
+        // SUDESTE ASIÁTICO  (DVB-T2 / ISDB-T)
+        // ══════════════════════════════════════════════════════
+        TdtTransmitter("Wisma Nusantara", "Yakarta", "ID", "DVB-T2", -6.2088, 106.8456, 100.0),
+        TdtTransmitter("Surabaya Tower", "Surabaya", "ID", "DVB-T2", -7.2575, 112.7521, 50.0),
+        TdtTransmitter("Manila Transmitter", "Manila", "PH", "ISDB-T", 14.5995, 120.9842, 100.0),
+        TdtTransmitter("Hanoi Transmitter", "Hanói", "VN", "DVB-T2", 21.0245, 105.8412, 100.0),
+        TdtTransmitter("Ho Chi Minh City", "Ciudad Ho Chi Minh", "VN", "DVB-T2", 10.8231, 106.6297, 100.0),
+        TdtTransmitter("Bangkok Transmitter", "Bangkok", "TH", "DVB-T2", 13.7563, 100.5018, 100.0),
+        TdtTransmitter("Kuala Lumpur Tower", "Kuala Lumpur", "MY", "DVB-T2", 3.1478, 101.6953, 100.0),
+        TdtTransmitter("Singapore Bukit Batok", "Singapur", "SG", "DVB-T2", 1.3521, 103.8198, 50.0)
     )
 
     /** Devuelve los N transmisores más cercanos con su distancia en km */

@@ -35,6 +35,20 @@ class OrientationManager(private val context: Context) : SensorEventListener {
     private val remappedMatrix    = FloatArray(9)
     private val orientationAngles = FloatArray(3)
 
+    // Filtro EMA: sensor a 50 Hz para muchas muestras, alpha bajo para suavizado agresivo
+    private val alpha = 0.05f
+    private var smoothAzimuth = -1f   // -1 = no inicializado
+    private var smoothPitch   = 0f
+    private var smoothRoll    = 0f
+
+    // Limitador de tasa de notificación: sensor corre a 50 Hz pero el listener
+    // solo recibe actualizaciones a ~15 Hz para no redibujar la UI continuamente
+    private var lastNotifyMs = 0L
+    private val notifyIntervalMs = 67L   // ≈ 15 fps
+
+    // Histéresis en la transición HORIZONTAL↔VERTICAL para evitar flip de signo cerca de 45°
+    private var currentMode = Mode.HORIZONTAL
+
     var listener: Listener? = null
 
     fun start() {
@@ -49,6 +63,9 @@ class OrientationManager(private val context: Context) : SensorEventListener {
 
     fun stop() {
         sensorManager.unregisterListener(this)
+        smoothAzimuth = -1f
+        lastNotifyMs  = 0L
+        currentMode   = Mode.HORIZONTAL
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -74,7 +91,13 @@ class OrientationManager(private val context: Context) : SensorEventListener {
 
         SensorManager.getOrientation(rotationMatrix, orientationAngles)
         val rawPitchDeg = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
-        val mode = if (abs(rawPitchDeg) > 45f) Mode.VERTICAL else Mode.HORIZONTAL
+        // Histéresis: entra en VERTICAL solo si supera 50°, vuelve a HORIZONTAL solo si baja de 40°
+        currentMode = when {
+            abs(rawPitchDeg) > 50f -> Mode.VERTICAL
+            abs(rawPitchDeg) < 40f -> Mode.HORIZONTAL
+            else -> currentMode   // zona de histéresis: mantener modo anterior
+        }
+        val mode = currentMode
 
         val matrixForReading = if (mode == Mode.VERTICAL) {
             SensorManager.remapCoordinateSystem(
@@ -90,11 +113,30 @@ class OrientationManager(private val context: Context) : SensorEventListener {
 
         SensorManager.getOrientation(matrixForReading, orientationAngles)
 
-        val azimuth = ((Math.toDegrees(orientationAngles[0].toDouble()) + 360.0) % 360.0).toFloat()
-        val pitch   = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
-        val roll    = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
+        val rawAzimuth = ((Math.toDegrees(orientationAngles[0].toDouble()) + 360.0) % 360.0).toFloat()
+        val rawPitch   = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
+        val rawRoll    = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
 
-        listener?.onOrientation(azimuth, pitch, roll, mode)
+        // EMA con manejo de wrap-around en azimut (0°/360°)
+        if (smoothAzimuth < 0f) {
+            smoothAzimuth = rawAzimuth
+            smoothPitch   = rawPitch
+            smoothRoll    = rawRoll
+        } else {
+            var azDiff = rawAzimuth - smoothAzimuth
+            if (azDiff > 180f)  azDiff -= 360f
+            if (azDiff < -180f) azDiff += 360f
+            smoothAzimuth = ((smoothAzimuth + alpha * azDiff) + 360f) % 360f
+            smoothPitch   += alpha * (rawPitch - smoothPitch)
+            smoothRoll    += alpha * (rawRoll  - smoothRoll)
+        }
+
+        // Notificar al listener solo a ~15 Hz (el EMA igual corre a 50 Hz internamente)
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastNotifyMs >= notifyIntervalMs) {
+            lastNotifyMs = now
+            listener?.onOrientation(smoothAzimuth, smoothPitch, smoothRoll, mode)
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

@@ -39,18 +39,11 @@ object SatelliteCalculator {
         val elDeg = Math.toDegrees(el)
 
         // ── Azimut ───────────────────────────────────────────────────
-        // Ángulo base (hacia el satélite desde el Ecuador)
-        val azBase = atan2(tan(B), sin(latRad))
-        var azDeg  = Math.toDegrees(azBase)
-
-        // Corrección de cuadrante
-        azDeg = when {
-            obsLat >= 0 && satLon >= obsLon -> 180.0 + azDeg   // Norte, satélite al Este
-            obsLat >= 0 && satLon <  obsLon -> 180.0 + azDeg   // Norte, satélite al Oeste
-            obsLat <  0 && satLon >= obsLon -> azDeg            // Sur, satélite al Este
-            else                            -> 360.0 + azDeg   // Sur, satélite al Oeste
-        }
-        azDeg = ((azDeg % 360.0) + 360.0) % 360.0
+        // Fórmula correcta para todos los cuadrantes (norte/sur, este/oeste):
+        //   atan2(sin(B), -sin(lat)*cos(B))
+        // donde B = satLon - obsLon. Derivada de ECEF y verificada contra calculadoras de referencia.
+        val azRad = atan2(sin(B), -sin(latRad) * cos(B))
+        val azDeg = ((Math.toDegrees(azRad) % 360.0) + 360.0) % 360.0
 
         return LookAngles(
             azimuthDeg   = azDeg,

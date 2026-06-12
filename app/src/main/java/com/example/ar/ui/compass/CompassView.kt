@@ -44,6 +44,10 @@ class CompassView @JvmOverloads constructor(
     private val calTxtPaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER; isFakeBoldText = true; color = Color.WHITE
     }
+    private val bubbleBgPaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val bubbleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.5f }
+    private val bubblePaint       = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val bubbleLinePaint   = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1f }
 
     // ── Propiedades públicas ─────────────────────────────────────────────────
 
@@ -52,6 +56,8 @@ class CompassView @JvmOverloads constructor(
     var targetBearing: Float? = null
         set(value) { field = value; invalidate() }
     var pitch: Float = 0f
+        set(value) { field = value; invalidate() }
+    var roll: Float = 0f
         set(value) { field = value; invalidate() }
     var distanceMeters: Double? = null
         set(value) { field = value; invalidate() }
@@ -81,6 +87,7 @@ class CompassView @JvmOverloads constructor(
 
         if (mode == Mode.HORIZONTAL) drawDial(canvas) else drawVerticalHud(canvas)
         drawCalibrationBanner(canvas)
+        drawBubbleLevel(canvas)
     }
 
     // ── Banner de calibración ────────────────────────────────────────────────
@@ -101,6 +108,67 @@ class CompassView @JvmOverloads constructor(
         else
             "⚠ Calibración baja — Tocá para calibrar"
         canvas.drawText(msg, w / 2f, bannerH * 0.70f, calTxtPaint)
+    }
+
+    // ── Nivel de burbuja integrado ───────────────────────────────────────────
+
+    private fun drawBubbleLevel(canvas: Canvas) {
+        val p = pal
+        val w = width.toFloat()
+        val h = height.toFloat()
+        
+        // Helper para convertir dp a px
+        val density = context.resources.displayMetrics.density
+        val dp = { v: Float -> v * density }
+        
+        val blRadius = dp(28f)
+        val bubbleRadius = dp(6f)
+        val targetRadius = dp(8f)
+        
+        // Posición: esquina superior izquierda
+        val blCx = blRadius + dp(12f)
+        val bannerH = if (calibrationLevel < SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM) h * 0.06f else 0f
+        val blCy = blRadius + dp(12f) + bannerH
+        
+        // 1. Dibujar círculo de fondo (ligeramente translúcido)
+        bubbleBgPaint.color = Color.argb(120, 16, 23, 42)
+        canvas.drawCircle(blCx, blCy, blRadius, bubbleBgPaint)
+        
+        // 2. Dibujar anillo exterior
+        bubbleBorderPaint.color = cGrid
+        canvas.drawCircle(blCx, blCy, blRadius, bubbleBorderPaint)
+        
+        // 3. Dibujar anillo del centro (zona nivelada)
+        bubbleBorderPaint.color = p.textSub
+        canvas.drawCircle(blCx, blCy, targetRadius, bubbleBorderPaint)
+        
+        // 4. Dibujar líneas de cruz (ejes)
+        bubbleLinePaint.color = cGrid
+        canvas.drawLine(blCx - blRadius, blCy, blCx + blRadius, blCy, bubbleLinePaint)
+        canvas.drawLine(blCx, blCy - blRadius, blCx, blCy + blRadius, bubbleLinePaint)
+        
+        // 5. Calcular desplazamiento de la burbuja (máximo 12 grados de inclinación para tope de escala)
+        val maxAngle = 12f
+        // Pitch: inclinación adelante/atrás. Roll: inclinación izquierda/derecha.
+        val dx = (roll / maxAngle).coerceIn(-1f, 1f) * (blRadius - bubbleRadius)
+        val dy = (pitch / maxAngle).coerceIn(-1f, 1f) * (blRadius - bubbleRadius)
+        
+        val bubbleX = blCx + dx
+        val bubbleY = blCy + dy
+        
+        // Determinar si está nivelado (margen de 1.5 grados)
+        val isLevel = kotlin.math.abs(pitch) < 1.5f && kotlin.math.abs(roll) < 1.5f
+        
+        // 6. Dibujar la burbuja
+        bubblePaint.color = if (isLevel) p.align else p.primary
+        canvas.drawCircle(bubbleX, bubbleY, bubbleRadius, bubblePaint)
+        
+        // 7. Dibujar reflejo 3D en la burbuja para realismo visual
+        val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(180, 255, 255, 255)
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(bubbleX - bubbleRadius * 0.3f, bubbleY - bubbleRadius * 0.3f, bubbleRadius * 0.25f, highlightPaint)
     }
 
     // ── Modo horizontal (dial circular) ─────────────────────────────────────
@@ -242,8 +310,10 @@ class CompassView @JvmOverloads constructor(
             canvas.drawText("%.0f°".format(clampedEl), barCx, y - 6f, lp)
         }
 
-        // Línea de pitch actual
-        val pitchY = bottom - (pitch.coerceIn(0f, 90f) / 90f) * barH
+        // Línea de pitch actual — negamos porque en modo horizontal Android devuelve
+        // pitch negativo al inclinar hacia el cielo; elevationPitch es siempre positivo.
+        val elevationPitch = if (mode == Mode.HORIZONTAL) -pitch else pitch
+        val pitchY = bottom - (elevationPitch.coerceIn(0f, 90f) / 90f) * barH
         val pp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = p.primary; strokeWidth = 3f; style = Paint.Style.STROKE
         }
@@ -251,7 +321,7 @@ class CompassView @JvmOverloads constructor(
 
         // Coincidencia elevación (verde)
         targetElevation?.let { elev ->
-            if (abs(pitch - elev) < 3f) {
+            if (abs(elevationPitch - elev) < 3f) {
                 val gp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = p.align; strokeWidth = 5f; style = Paint.Style.STROKE
                 }

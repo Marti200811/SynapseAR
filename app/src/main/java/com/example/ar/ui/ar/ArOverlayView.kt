@@ -28,12 +28,27 @@ class ArOverlayView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     // ── Propiedades públicas ─────────────────────────────────────────────────
+
+    // Sensor data — sin invalidate() individual; se actualiza en batch via updateSensorData()
     var azimuth: Float = 0f
-        set(v) { field = v; invalidate() }
     var pitch: Float = 0f
-        set(v) { field = v; invalidate() }
     var roll: Float = 0f
-        set(v) { field = v; invalidate() }
+    var isVerticalMode: Boolean = false
+
+    /** Ángulo de elevación actual del teléfono (positivo = hacia el cielo). */
+    var pitchElevation: Float = 0f
+
+    /** Actualiza los 5 valores de sensor en una sola operación → un único redraw. */
+    fun updateSensorData(az: Float, p: Float, pe: Float, r: Float, vertical: Boolean) {
+        azimuth       = az
+        pitch         = p
+        pitchElevation = pe
+        roll          = r
+        isVerticalMode = vertical
+        invalidate()
+    }
+
+    // Propiedades de objetivo/estado — sí disparan redraw inmediato (cambian poco frecuente)
     var targetAzimuth: Float? = null
         set(v) { field = v; invalidate() }
     var targetElevation: Float? = null
@@ -41,8 +56,6 @@ class ArOverlayView @JvmOverloads constructor(
     var isAligned: Boolean = false
         set(v) { field = v; invalidate() }
     var calibrationLevel: Int = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
-        set(v) { field = v; invalidate() }
-    var isVerticalMode: Boolean = false
         set(v) { field = v; invalidate() }
 
     /** Nombre del objetivo para mostrar en la retícula flotante */
@@ -62,9 +75,11 @@ class ArOverlayView @JvmOverloads constructor(
     var satelliteBelt: List<SatelliteDot> = emptyList()
         set(v) { field = v; invalidate() }
 
-    // ── Campo de visión asumido de la cámara trasera ─────────────────────────
-    private val FOV_H = 65f   // grados horizontales
-    private val FOV_V = 50f   // grados verticales
+    // ── Campo de visión de la cámara trasera ─────────────────────────────────
+    // Valores por defecto razonables; ArFragment los reemplaza con el FOV real
+    // leído de CameraInfo.intrinsics para mayor precisión de apuntado.
+    var fovH = 65f
+    var fovV = 50f
 
     // ── Paleta del tema ──────────────────────────────────────────────────────
     private val pal get() = ThemeManager.getPalette(context)
@@ -169,7 +184,7 @@ class ArOverlayView @JvmOverloads constructor(
         // Triángulo del objetivo en la cinta — rojo si alineado
         targetAzimuth?.let { bearing ->
             val diff = ((bearing - azimuth + 540f) % 360f) - 180f
-            val triColor = if (isAligned) Color.RED else p.secondary
+            val triColor = if (isAligned) p.align else p.secondary
             if (abs(diff) <= degSpan / 2f) {
                 val tx = cx + diff * pxPerDeg
                 targetPaint.color = triColor
@@ -238,7 +253,7 @@ class ArOverlayView @JvmOverloads constructor(
 
         targetElevation?.let { elev ->
             val y = bottom - (elev.coerceIn(0f, 90f) / 90f) * barH
-            val elvColor = if (isAligned) Color.RED else p.secondary
+            val elvColor = if (isAligned) p.align else p.secondary
             elevPaint.color = elvColor
             elevPaint.strokeWidth = 4f
             canvas.drawLine(left, y, right, y, elevPaint)
@@ -247,19 +262,19 @@ class ArOverlayView @JvmOverloads constructor(
             canvas.drawText("%.0f°".format(elev), cx, y - 7f, elevLblPaint)
         }
 
-        val pitchY = bottom - (pitch.coerceIn(0f, 90f) / 90f) * barH
+        val pitchY = bottom - (pitchElevation.coerceIn(0f, 90f) / 90f) * barH
         pitchPaint.color = p.primary
         pitchPaint.strokeWidth = 3f
         canvas.drawLine(left, pitchY, right, pitchY, pitchPaint)
 
         elevLblPaint.color    = p.primary
         elevLblPaint.textSize = barW * 0.60f
-        canvas.drawText("%.0f°".format(pitch.coerceIn(0f, 90f)), cx, pitchY + barW * 0.7f, elevLblPaint)
+        canvas.drawText("%.0f°".format(pitchElevation.coerceIn(0f, 90f)), cx, pitchY + barW * 0.7f, elevLblPaint)
 
         targetElevation?.let { elev ->
-            if (abs(pitch - elev) < 3f) {
+            if (abs(pitchElevation - elev) < 3f) {
                 val y = bottom - (elev.coerceIn(0f, 90f) / 90f) * barH
-                alignPaint.color = Color.RED
+                alignPaint.color = p.align
                 alignPaint.strokeWidth = 5f
                 canvas.drawLine(left, y, right, y, alignPaint)
             }
@@ -320,10 +335,10 @@ class ArOverlayView @JvmOverloads constructor(
             var azDiff = dot.azimuth - azimuth
             while (azDiff > 180f) azDiff -= 360f
             while (azDiff < -180f) azDiff += 360f
-            val elDiff = dot.elevation - pitch
+            val elDiff = dot.elevation - pitchElevation
 
-            val sx = w / 2f + (azDiff / (FOV_H / 2f)) * (w / 2f)
-            val sy = h / 2f - (elDiff / (FOV_V / 2f)) * (h / 2f)
+            val sx = w / 2f + (azDiff / (fovH / 2f)) * (w / 2f)
+            val sy = h / 2f - (elDiff / (fovV / 2f)) * (h / 2f)
 
             // Fuera de pantalla: saltar
             if (sx !in 0f..w || sy !in 0f..h) continue
@@ -363,7 +378,7 @@ class ArOverlayView @JvmOverloads constructor(
         val r  = w * 0.022f
 
         // Cuando está alineado, la mira se pone roja
-        val color = if (isAligned) Color.RED else Color.argb(200, 255, 255, 255)
+        val color = if (isAligned) p.align else Color.argb(200, 255, 255, 255)
         val crossPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = if (isAligned) 3f else 2f
@@ -391,11 +406,11 @@ class ArOverlayView @JvmOverloads constructor(
         var azDiff = targetAz - azimuth
         while (azDiff > 180f) azDiff -= 360f
         while (azDiff < -180f) azDiff += 360f
-        val elDiff = targetElevation?.let { it - pitch } ?: 0f
+        val elDiff = targetElevation?.let { it - pitchElevation } ?: 0f
 
         // Proyección en pantalla según FOV
-        val rawX = w / 2f + (azDiff / (FOV_H / 2f)) * (w / 2f)
-        val rawY = h / 2f - (elDiff / (FOV_V / 2f)) * (h / 2f)
+        val rawX = w / 2f + (azDiff / (fovH / 2f)) * (w / 2f)
+        val rawY = h / 2f - (elDiff / (fovV / 2f)) * (h / 2f)
 
         val marginH = w * 0.1f
         val marginV = h * 0.15f
@@ -406,12 +421,17 @@ class ArOverlayView @JvmOverloads constructor(
             return
         }
 
+        // Snap-to-center cuando está alineado: elimina el micro-jitter del sensor
+        // cerca del centro sin que sea perceptible (el error ya es < 3°)
+        val cx = if (isAligned) w / 2f else rawX
+        val cy = if (isAligned) h / 2f else rawY
+
         // ── Corchetes militares ──────────────────────────────────────────────
         val armLen = w * 0.075f
         val gap    = w * 0.038f
         val locked = isAligned
 
-        val bracketColor = if (locked) Color.RED else p.primary
+        val bracketColor = if (locked) p.align else p.primary
         val bracketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = if (locked) 5f else 3f
@@ -419,62 +439,60 @@ class ArOverlayView @JvmOverloads constructor(
         }
 
         // Top-left
-        canvas.drawLine(rawX - gap - armLen, rawY - gap, rawX - gap,           rawY - gap,           bracketPaint)
-        canvas.drawLine(rawX - gap,           rawY - gap - armLen, rawX - gap, rawY - gap,           bracketPaint)
+        canvas.drawLine(cx - gap - armLen, cy - gap, cx - gap,           cy - gap,           bracketPaint)
+        canvas.drawLine(cx - gap,           cy - gap - armLen, cx - gap, cy - gap,           bracketPaint)
         // Top-right
-        canvas.drawLine(rawX + gap,           rawY - gap - armLen, rawX + gap, rawY - gap,           bracketPaint)
-        canvas.drawLine(rawX + gap,           rawY - gap,           rawX + gap + armLen, rawY - gap, bracketPaint)
+        canvas.drawLine(cx + gap,           cy - gap - armLen, cx + gap, cy - gap,           bracketPaint)
+        canvas.drawLine(cx + gap,           cy - gap,           cx + gap + armLen, cy - gap, bracketPaint)
         // Bottom-left
-        canvas.drawLine(rawX - gap - armLen, rawY + gap,           rawX - gap, rawY + gap,           bracketPaint)
-        canvas.drawLine(rawX - gap,           rawY + gap,           rawX - gap, rawY + gap + armLen, bracketPaint)
+        canvas.drawLine(cx - gap - armLen, cy + gap,           cx - gap, cy + gap,           bracketPaint)
+        canvas.drawLine(cx - gap,           cy + gap,           cx - gap, cy + gap + armLen, bracketPaint)
         // Bottom-right
-        canvas.drawLine(rawX + gap,           rawY + gap,           rawX + gap + armLen, rawY + gap, bracketPaint)
-        canvas.drawLine(rawX + gap,           rawY + gap,           rawX + gap, rawY + gap + armLen, bracketPaint)
+        canvas.drawLine(cx + gap,           cy + gap,           cx + gap + armLen, cy + gap, bracketPaint)
+        canvas.drawLine(cx + gap,           cy + gap,           cx + gap, cy + gap + armLen, bracketPaint)
 
         // Punto central del objetivo
         bracketPaint.style = Paint.Style.FILL
-        canvas.drawCircle(rawX, rawY, if (locked) 10f else 6f, bracketPaint)
+        canvas.drawCircle(cx, cy, if (locked) 10f else 6f, bracketPaint)
         bracketPaint.style = Paint.Style.STROKE
 
         if (locked) {
-            // ── Anillo pulsante rojo ─────────────────────────────────────────
+            // ── Anillo pulsante (verde = alineado) ──────────────────────────
             val pulse = (System.currentTimeMillis() % 1200L) / 1200f
             val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
                 strokeWidth = 4f
-                color = Color.argb(((1f - pulse) * 220).toInt(), 255, 30, 30)
+                color = Color.argb(((1f - pulse) * 220).toInt(), p.align.red(), p.align.green(), p.align.blue())
             }
-            canvas.drawCircle(rawX, rawY, (gap + armLen) * (0.7f + pulse * 1.0f), ringPaint)
+            canvas.drawCircle(cx, cy, (gap + armLen) * (0.7f + pulse * 1.0f), ringPaint)
 
-            // Segundo anillo más grande
             val ringPaint2 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
                 strokeWidth = 2f
-                color = Color.argb(((1f - pulse) * 120).toInt(), 255, 30, 30)
+                color = Color.argb(((1f - pulse) * 120).toInt(), p.align.red(), p.align.green(), p.align.blue())
             }
-            canvas.drawCircle(rawX, rawY, (gap + armLen) * (1.2f + pulse * 1.0f), ringPaint2)
+            canvas.drawCircle(cx, cy, (gap + armLen) * (1.2f + pulse * 1.0f), ringPaint2)
 
-            // Texto LOCKED
             val lockedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.RED
+                color = p.align
                 textAlign = Paint.Align.CENTER
                 textSize  = w * 0.052f
                 isFakeBoldText = true
             }
-            canvas.drawText("● LOCKED", rawX, rawY + gap + armLen + lockedPaint.textSize * 1.6f, lockedPaint)
+            canvas.drawText("● ALINEADO", cx, cy + gap + armLen + lockedPaint.textSize * 1.6f, lockedPaint)
 
             invalidate()   // mantener animación del anillo pulsante
 
         } else {
             // ── Etiqueta: nombre + distancia ─────────────────────────────────
-            val labelY = rawY + gap + armLen + w * 0.04f
+            val labelY = cy + gap + armLen + w * 0.04f
             if (targetLabel.isNotEmpty()) {
                 val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = Color.argb(220, p.text.red(), p.text.green(), p.text.blue())
                     textAlign = Paint.Align.CENTER
                     textSize  = w * 0.033f
                 }
-                canvas.drawText(targetLabel, rawX, labelY, namePaint)
+                canvas.drawText(targetLabel, cx, labelY, namePaint)
             }
             if (targetDistanceStr.isNotEmpty()) {
                 val distPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -483,7 +501,7 @@ class ArOverlayView @JvmOverloads constructor(
                     textSize  = w * 0.040f
                     isFakeBoldText = true
                 }
-                canvas.drawText(targetDistanceStr, rawX, labelY + w * 0.05f, distPaint)
+                canvas.drawText(targetDistanceStr, cx, labelY + w * 0.05f, distPaint)
             }
         }
     }
@@ -524,7 +542,7 @@ class ArOverlayView @JvmOverloads constructor(
         // Triángulo de flecha
         val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = if (isAligned) Color.RED else p.secondary
+            color = if (isAligned) p.align else p.secondary
         }
         val arrowPath = Path().apply {
             moveTo(edgeX + cos(angle) * arrowSize,
@@ -614,7 +632,7 @@ class ArOverlayView @JvmOverloads constructor(
                 lineTo(tx + dialR * 0.06f, ty + dialR * 0.12f)
                 close()
             }
-            targetPaint.color = if (isAligned) Color.RED else p.secondary
+            targetPaint.color = if (isAligned) p.align else p.secondary
             canvas.drawPath(tri, targetPaint)
         }
 

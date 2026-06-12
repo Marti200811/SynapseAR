@@ -331,6 +331,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         val b = _binding ?: return
         b.compass.azimuth = azimuth
         b.compass.pitch   = pitch
+        b.compass.roll    = roll
         b.compass.mode    =
             if (mode == OrientationManager.Mode.VERTICAL) CompassView.Mode.VERTICAL
             else CompassView.Mode.HORIZONTAL

@@ -44,6 +44,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
 
     private val beeper = ProximityBeeper()
     private var lastAzimuth = 0f
+    private var lastElevationAngle = 0f   // -pitch en modo horizontal: positivo al apuntar al cielo
     private var lastTargetAzimuth = Double.NaN
     private var lastTargetElevation = Double.NaN
     private var wasAligned = false   // para detectar el cambio false→true y vibrar
@@ -124,6 +125,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
     // ── Cámara ────────────────────────────────────────────────────────────────
 
     private fun startCamera() {
+        detectCameraFov()
         val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -143,6 +145,29 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
+    private fun detectCameraFov() {
+        try {
+            val mgr = requireContext().getSystemService(android.content.Context.CAMERA_SERVICE)
+                    as android.hardware.camera2.CameraManager
+            val id = mgr.cameraIdList.firstOrNull { cid ->
+                mgr.getCameraCharacteristics(cid)
+                    .get(android.hardware.camera2.CameraCharacteristics.LENS_FACING) ==
+                    android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK
+            } ?: return
+            val ch = mgr.getCameraCharacteristics(id)
+            val sensor = ch.get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE) ?: return
+            val fls   = ch.get(android.hardware.camera2.CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
+            val fl    = fls?.firstOrNull() ?: return
+            val fovH  = Math.toDegrees(2.0 * Math.atan(sensor.width  / (2.0 * fl))).toFloat()
+            val fovV  = Math.toDegrees(2.0 * Math.atan(sensor.height / (2.0 * fl))).toFloat()
+            if (fovH > 10f && fovV > 10f) {
+                val b = _binding ?: return
+                b.arOverlay.fovH = fovH
+                b.arOverlay.fovV = fovV
+            }
+        } catch (_: Exception) { /* si falla, usa el FOV por defecto */ }
+    }
+
     // ── Localización ──────────────────────────────────────────────────────────
 
     private fun startLocation() {
@@ -159,10 +184,18 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         // C06: guard contra NPE si el sensor dispara después de onDestroyView
         val b = _binding ?: return
         lastAzimuth = azimuth
-        b.arOverlay.azimuth        = azimuth
-        b.arOverlay.pitch          = pitch
-        b.arOverlay.roll           = roll
-        b.arOverlay.isVerticalMode = (mode == OrientationManager.Mode.VERTICAL)
+        // Android devuelve pitch negativo al inclinar el tope hacia el cielo; negamos
+        // para obtener un ángulo de elevación positivo alineado con las elevaciones satelitales.
+        // HORIZONTAL: Android da pitch negativo al inclinar hacia el cielo → negamos.
+        // VERTICAL: el remapping de ejes (AXIS_X/AXIS_Z) ya da pitch positivo → lo usamos tal cual.
+        lastElevationAngle = if (mode == OrientationManager.Mode.HORIZONTAL) -pitch else pitch
+        b.arOverlay.updateSensorData(
+            az       = azimuth,
+            p        = pitch,
+            pe       = lastElevationAngle,
+            r        = roll,
+            vertical = (mode == OrientationManager.Mode.VERTICAL)
+        )
         updateAligned()
         updateBeeper()
     }
@@ -247,7 +280,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         if (azDiff > 180.0) azDiff = 360.0 - azDiff
 
         val elDiff = if (!lastTargetElevation.isNaN())
-            abs(binding.arOverlay.pitch.toDouble() - lastTargetElevation)
+            abs(lastElevationAngle.toDouble() - lastTargetElevation)
         else 0.0
 
         val aligned = azDiff < 3.0 && elDiff < 3.0

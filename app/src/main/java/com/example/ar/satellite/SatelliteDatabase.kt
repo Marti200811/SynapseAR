@@ -36,6 +36,24 @@ object SatelliteDatabase {
         Satellite("NSS-806 (SES-8)",    -47.5, "América Latina",          "TV / Datos"),
         Satellite("Horizons 2",         -74.0, "Norteamérica / Atlántico","Datos"),
         Satellite("Galaxy 3C",          -95.0, "Norteamérica",            "TV / Datos"),
+        Satellite("Galaxy 16",          -99.0, "Norteamérica",            "DirecTV / Datos"),
+        Satellite("Galaxy 18",         -123.0, "Norteamérica / Pacífico", "TV / Datos"),
+        Satellite("Galaxy 19",          -97.0, "Norteamérica",            "TV / FTA"),
+        Satellite("DirecTV 9S",        -101.0, "Norteamérica",            "DirecTV HD"),
+        Satellite("DirecTV 10",        -102.8, "Norteamérica",            "DirecTV HD"),
+        Satellite("DirecTV 12",        -103.0, "Norteamérica",            "DirecTV HD"),
+        Satellite("Dish / Echostar 15", -61.5, "Norteamérica",            "Dish Network"),
+        Satellite("Dish / Echostar 16", -61.5, "Norteamérica",            "Dish Network HD"),
+        Satellite("Dish / AMC-3",       -87.0, "Norteamérica",            "Dish Network"),
+        Satellite("ViaSat-2",           -69.9, "Norteamérica",            "Internet banda ancha"),
+        Satellite("ViaSat-3 Americas",  -88.0, "Norteamérica",            "Internet banda ancha"),
+        Satellite("AMC-4 / SES-4",      -67.0, "Norteamérica",            "TV / Datos"),
+        Satellite("AMC-9 / SES-9",      -83.0, "Norteamérica / Caribe",   "TV / Datos"),
+        Satellite("Anik F1",           -107.3, "Canadá / Norteamérica",   "Bell TV"),
+        Satellite("Anik F2",           -111.1, "Canadá / Norteamérica",   "Bell TV / Internet"),
+        Satellite("Nimiq 5",            -72.7, "Canadá",                  "Bell TV HD"),
+        Satellite("SES-1",             -101.0, "Norteamérica",            "TV / Datos"),
+        Satellite("SES-3",             -103.0, "Norteamérica",            "TV / Internet"),
 
         // ── ESPAÑA / EUROPA ──────────────────────────────────────────
         Satellite("Astra 1 (19.2°E)",   19.2, "Europa",                  "TV HD / DTH"),
@@ -51,12 +69,29 @@ object SatelliteDatabase {
 
         // ── AFRICA / ORIENTE MEDIO ───────────────────────────────────
         Satellite("Arabsat 5A (30.5°E)", 30.5, "Oriente Medio / África",  "TV / DTH"),
+        Satellite("Arabsat 6A (26°E)",   26.0, "Oriente Medio / África",  "TV HD / Internet"),
         Satellite("Nilesat 7W",          -7.0, "Norte de África",         "TV árabe"),
+        Satellite("Nilesat 201 (7W)",    -7.0, "Norte de África / Europa","TV árabe HD"),
+        Satellite("Badr 4 (26°E)",       26.0, "Oriente Medio",           "TV árabe / DTH"),
+        Satellite("Yahsat 1A (52.5°E)",  52.5, "Oriente Medio / África",  "TV / Internet"),
+        Satellite("Es'hail 2 (26°E)",    26.0, "Qatar / Oriente Medio",   "TV / Ham radio"),
         Satellite("Intelsat 20 (68.5°E)",68.5, "África / Asia del Sur",   "TV / Internet"),
+        Satellite("SES-5 (5°E)",          5.0, "Europa / África",         "TV / Internet"),
+        Satellite("Intelsat 33e (60°E)", 60.0, "Oriente Medio / Asia",    "Internet / Datos"),
 
         // ── ASIA / PACÍFICO ──────────────────────────────────────────
         Satellite("AsiaSat 7 (105.5°E)", 105.5,"Asia",                    "TV / DTH"),
-        Satellite("Intelsat 18 (180°E)", 180.0,"Pacífico",                "TV / Datos")
+        Satellite("AsiaSat 9 (122°E)",   122.0,"Asia / Pacífico",         "TV HD / Internet"),
+        Satellite("Intelsat 18 (180°E)", 180.0,"Pacífico",                "TV / Datos"),
+        Satellite("Apstar 7 (76.5°E)",   76.5, "Asia del Sur / SE Asia",  "TV / DTH"),
+        Satellite("Apstar 9 (142°E)",    142.0,"Asia / Pacífico",         "TV / Internet"),
+        Satellite("SES-12 (95°E)",        95.0, "India / SE Asia",        "TV / Internet"),
+        Satellite("Measat 3 (91.5°E)",   91.5, "SE Asia / Malaysia",      "TV / DTH"),
+        Satellite("Thaicom 5 (78.5°E)",  78.5, "SE Asia / Tailandia",     "TV / Internet"),
+        Satellite("Koreasat 5 (113°E)",  113.0,"Corea / Asia NE",         "TV / Datos"),
+        Satellite("ChinaSat 6A (125°E)", 125.0,"China / Asia NE",         "TV CCTV"),
+        Satellite("ChinaSat 9 (92.2°E)", 92.2, "China / Asia",            "TV / DTH"),
+        Satellite("JCSAT-3A (128°E)",    128.0,"Japón / Asia NE",         "TV / Internet")
     )
 
     /** Devuelve la lista agrupada por región */

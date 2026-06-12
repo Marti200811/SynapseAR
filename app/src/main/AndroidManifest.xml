@@ -34,7 +34,7 @@
         -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-4092701127898720~4595428112"/>
+            android:value="ca-app-pub-5417760954645863~1056694271"/>
 
         <!-- Resuelve conflicto de merger entre AdMob y Firebase Analytics -->
         <property
