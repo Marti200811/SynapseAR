@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/compassFragment"
         android:title="@string/tab_compass"
-        android:icon="@android:drawable/ic_menu_compass"/>
+        android:icon="@drawable/ic_nav_compass"/>
     <item android:id="@+id/mapFragment"
         android:title="@string/tab_map"
-        android:icon="@android:drawable/ic_menu_mapmode"/>
+        android:icon="@drawable/ic_nav_map"/>
     <item android:id="@+id/arFragment"
         android:title="@string/tab_ar"
-        android:icon="@android:drawable/ic_menu_camera"/>
+        android:icon="@drawable/ic_nav_ar"/>
 </menu>

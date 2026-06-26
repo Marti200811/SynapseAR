@@ -15,7 +15,7 @@ import android.os.Looper
  *   20–45° → pitido lento   (cada 1500 ms)
  *   10–20° → pitido medio   (cada 700 ms)
  *   3–10°  → pitido rápido  (cada 280 ms)
- *   < 3°   → pitido continuo (¡bloqueado!)
+ *   < 3°   → tono continuo fijo (dial tone sostenido)
  */
 class ProximityBeeper {
 
@@ -23,10 +23,11 @@ class ProximityBeeper {
     private var toneGen: ToneGenerator? = null
     private var isRunning = false
     private var currentIntervalMs = -2L  // valor inicial imposible para forzar primer update
+    private var continuousActive = false  // true cuando estamos en modo tono continuo
 
     private val beepRunnable = object : Runnable {
         override fun run() {
-            if (!isRunning) return
+            if (!isRunning || continuousActive) return
             toneGen?.startTone(ToneGenerator.TONE_PROP_BEEP, 60)
             if (currentIntervalMs > 0) {
                 handler.postDelayed(this, currentIntervalMs)
@@ -44,12 +45,15 @@ class ProximityBeeper {
             null  // sin audio: beeper desactivado silenciosamente
         }
         isRunning = true
+        continuousActive = false
         currentIntervalMs = -2L
     }
 
     fun stop() {
         isRunning = false
+        continuousActive = false
         handler.removeCallbacks(beepRunnable)
+        toneGen?.stopTone()
         toneGen?.release()
         toneGen = null
         currentIntervalMs = -2L
@@ -62,12 +66,32 @@ class ProximityBeeper {
     fun updateAngularError(angularError: Double) {
         if (!isRunning) return
 
+        val aligned = angularError <= 3.0
+
+        if (aligned) {
+            if (!continuousActive) {
+                // Pasar de pulsos a tono continuo
+                handler.removeCallbacks(beepRunnable)
+                continuousActive = true
+                currentIntervalMs = 0L
+                // Dial tone sostenido 60 s; se detiene explícitamente al salir del estado
+                toneGen?.startTone(ToneGenerator.TONE_SUP_DIAL, 60_000)
+            }
+            return
+        }
+
+        if (continuousActive) {
+            // Salir del modo continuo y volver a pulsos
+            toneGen?.stopTone()
+            continuousActive = false
+            currentIntervalMs = -2L  // forzar re-schedule abajo
+        }
+
         val newInterval: Long = when {
             angularError > 45.0 -> -1L    // silencio
             angularError > 20.0 -> 1500L  // lento
             angularError > 10.0 -> 700L   // medio
-            angularError > 3.0  -> 280L   // rápido
-            else                -> 120L   // continuo
+            else                -> 280L   // rápido (3–10°)
         }
 
         if (newInterval == currentIntervalMs) return  // sin cambio, no interrumpir

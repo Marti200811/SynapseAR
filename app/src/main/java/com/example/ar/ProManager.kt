@@ -21,10 +21,12 @@ object ProManager {
      */
     private const val DEBUG_FORCE_FREE = false
 
+    /** Cambiar a false antes del lanzamiento en producción. */
+    private const val TESTING_MODE = true
+
     fun isPro(context: Context): Boolean {
-        // En debug, Pro por defecto para poder probar todas las funciones.
-        // Si DEBUG_FORCE_FREE = true, forzamos la experiencia gratuita.
         if (BuildConfig.DEBUG) return !DEBUG_FORCE_FREE
+        if (TESTING_MODE) return true
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getBoolean(KEY_PRO, false)
     }

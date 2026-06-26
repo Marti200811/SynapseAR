@@ -177,87 +177,103 @@ class CompassView @JvmOverloads constructor(
         val p  = pal
         val w  = width.toFloat()
         val h  = height.toFloat()
-        val elevBarW  = w * 0.14f
+        val elevBarW  = w * 0.13f
         val dialRight = w - elevBarW - w * 0.02f
         val cx = dialRight / 2f
         val cy = h / 2f
-        val radius = min(dialRight, h) / 2f * 0.92f
+        val radius = min(dialRight, h) / 2f * 0.90f
 
-        // Fondo brillo + círculo base
-        glowPaint.color = p.glow
-        canvas.drawCircle(cx, cy, radius, glowPaint)
-        bgPaint.color = cBg
-        canvas.drawCircle(cx, cy, radius * 0.97f, bgPaint)
+        // Anillos de fondo estilo mockup (cyan semitransparente)
+        val ringCyan08 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; strokeWidth = 1.5f
+            color = Color.argb(20, 0, 200, 255)
+        }
+        val ringCyan12 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; strokeWidth = 1f
+            color = Color.argb(26, 0, 200, 255)
+        }
+        for (frac in listOf(0.55f, 0.72f, 0.88f))
+            canvas.drawCircle(cx, cy, radius * frac, ringCyan08)
+        canvas.drawCircle(cx, cy, radius * 0.97f, ringCyan12)
 
-        // Anillos
-        ringPaint.color = cGrid
-        for (frac in listOf(0.55f, 0.72f, 0.88f, 0.97f))
-            canvas.drawCircle(cx, cy, radius * frac, ringPaint)
-
-        // Dial rotado con el azimut
+        // Aro ROTANTE con el azimut (N sube cuando apuntás al Norte)
         canvas.save()
         canvas.rotate(-azimuth, cx, cy)
 
-        cardinalPaint.textSize = radius * 0.16f
-        degPaint.textSize      = radius * 0.07f
+        cardinalPaint.textSize = radius * 0.15f
+        degPaint.textSize      = radius * 0.065f
 
         for (deg in 0 until 360 step 5) {
             val a      = Math.toRadians(deg.toDouble())
             val isMaj  = deg % 30 == 0
-            val len    = if (isMaj) radius * 0.10f else radius * 0.05f
+            val len    = if (isMaj) radius * 0.09f else radius * 0.045f
             val rOuter = radius * 0.95f
+            val tickColor = if (isMaj) Color.argb(200, 0, 200, 255) else Color.argb(80, 0, 200, 255)
+            val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                strokeWidth = if (isMaj) 2.5f else 1f; color = tickColor
+            }
             canvas.drawLine(
                 cx + (rOuter - len) * sin(a).toFloat(), cy - (rOuter - len) * cos(a).toFloat(),
-                cx + rOuter       * sin(a).toFloat(),   cy - rOuter       * cos(a).toFloat(),
-                if (isMaj) majorTickPaint else tickPaint
+                cx + rOuter * sin(a).toFloat(), cy - rOuter * cos(a).toFloat(), tp
             )
             if (isMaj && deg % 90 != 0) {
                 val tr = radius * 0.78f
-                canvas.drawText(
-                    deg.toString(),
+                degPaint.color = Color.argb(100, 255, 255, 255)
+                canvas.drawText(deg.toString(),
                     cx + tr * sin(a).toFloat(),
-                    cy - tr * cos(a).toFloat() + degPaint.textSize / 3f,
-                    degPaint
-                )
+                    cy - tr * cos(a).toFloat() + degPaint.textSize / 3f, degPaint)
             }
         }
 
         drawCardinal(canvas, "N", cx, cy, radius * 0.78f, 0.0,   p.primary)
-        drawCardinal(canvas, "E", cx, cy, radius * 0.78f, 90.0,  p.text)
-        drawCardinal(canvas, "S", cx, cy, radius * 0.78f, 180.0, p.text)
-        drawCardinal(canvas, "W", cx, cy, radius * 0.78f, 270.0, p.text)
+        drawCardinal(canvas, "E", cx, cy, radius * 0.78f, 90.0,  Color.argb(140, 0, 200, 255))
+        drawCardinal(canvas, "S", cx, cy, radius * 0.78f, 180.0, Color.argb(90, 0, 200, 255))
+        drawCardinal(canvas, "W", cx, cy, radius * 0.78f, 270.0, Color.argb(140, 0, 200, 255))
 
-        // Triángulo objetivo
+        // Marcador de objetivo sobre el aro rotante
         targetBearing?.let { bearing ->
             val a  = Math.toRadians(bearing.toDouble())
-            val tx = cx + (radius * 0.92f) * sin(a).toFloat()
-            val ty = cy - (radius * 0.92f) * cos(a).toFloat()
-            targetPaint.color = p.secondary
-            canvas.drawPath(Path().apply {
-                moveTo(tx, ty)
-                lineTo(tx - radius * 0.04f, ty + radius * 0.08f)
-                lineTo(tx + radius * 0.04f, ty + radius * 0.08f)
-                close()
-            }, targetPaint)
+            val tx = cx + (radius * 0.90f) * sin(a).toFloat()
+            val ty = cy - (radius * 0.90f) * cos(a).toFloat()
+            val tpStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = 2f; color = p.secondary
+            }
+            val tpFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL; color = p.secondary
+            }
+            val dashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = 1.5f
+                color = Color.argb(100, 0, 200, 255)
+                pathEffect = android.graphics.DashPathEffect(floatArrayOf(12f, 8f), 0f)
+            }
+            canvas.drawLine(cx, cy, tx, ty, dashPaint)
+            canvas.drawCircle(tx, ty, radius * 0.045f, tpStroke)
+            canvas.drawCircle(tx, ty, radius * 0.018f, tpFill)
         }
         canvas.restore()
 
-        // Aguja fija
-        needlePaint.color = p.needle
-        canvas.drawPath(Path().apply {
-            moveTo(cx, cy - radius * 0.55f)
-            lineTo(cx - radius * 0.05f, cy)
-            lineTo(cx + radius * 0.05f, cy)
+        // Aguja FIJA (siempre apunta arriba = heading actual)
+        val northPath = Path().apply {
+            moveTo(cx, cy - radius * 0.58f)
+            lineTo(cx - radius * 0.045f, cy - radius * 0.12f)
+            lineTo(cx + radius * 0.045f, cy - radius * 0.12f)
             close()
-        }, needlePaint)
-        canvas.drawCircle(cx, cy, radius * 0.05f, needlePaint)
+        }
+        val southPath = Path().apply {
+            moveTo(cx, cy + radius * 0.58f)
+            lineTo(cx - radius * 0.045f, cy + radius * 0.12f)
+            lineTo(cx + radius * 0.045f, cy + radius * 0.12f)
+            close()
+        }
+        needlePaint.color = p.needle
+        canvas.drawPath(northPath, needlePaint)
+        needlePaint.color = Color.argb(150, 255, 60, 60)
+        canvas.drawPath(southPath, needlePaint)
 
-        // Lectura central
-        readoutPaint.textSize    = radius * 0.22f
-        readoutSubPaint.textSize = radius * 0.09f
-        canvas.drawText("%03.0f°".format(azimuth), cx, cy + radius * 0.30f, readoutPaint)
-        canvas.drawText(distanceMeters?.let { distString(it) } ?: cardinalLabel(azimuth),
-            cx, cy + radius * 0.45f, readoutSubPaint)
+        val centerBg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(255, 10, 14, 26) }
+        canvas.drawCircle(cx, cy, radius * 0.055f, centerBg)
+        needlePaint.color = p.needle
+        canvas.drawCircle(cx, cy, radius * 0.035f, needlePaint)
 
         // Barra de elevación (derecha)
         drawElevationBar(canvas, dialRight + w * 0.02f, w - w * 0.01f, h * 0.10f, h * 0.90f)

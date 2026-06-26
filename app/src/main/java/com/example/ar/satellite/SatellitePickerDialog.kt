@@ -93,7 +93,11 @@ class SatelliteAdapter(
 
     fun filter(query: String) {
         displayed = if (query.isBlank()) allItems.toMutableList()
-        else allItems.filter { it.name.contains(query, ignoreCase = true) }.toMutableList()
+        else allItems.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                it.positionLabel.contains(query, ignoreCase = true) ||
+                it.use.contains(query, ignoreCase = true)
+            }.toMutableList()
         notifyDataSetChanged()
     }
 

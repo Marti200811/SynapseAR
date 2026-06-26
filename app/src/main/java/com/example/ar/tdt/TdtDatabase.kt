@@ -18,16 +18,45 @@ object TdtDatabase {
         // ══════════════════════════════════════════════════════
         // ARGENTINA  (ISDB-Tb — TDA)
         // ══════════════════════════════════════════════════════
-        TdtTransmitter("Cerro Tres Picos", "Buenos Aires", "AR", "ISDB-Tb", -34.6037, -58.3816, 30.0),
+
+        // — Buenos Aires (CABA) —
+        TdtTransmitter("Ministerio de Desarrollo Social", "Buenos Aires (CABA)", "AR", "ISDB-Tb", -34.6175, -58.3665, 30.0),
+
+        // — Buenos Aires (Provincia) —
+        TdtTransmitter("Cerro Tres Picos", "Tornquist", "AR", "ISDB-Tb", -38.1476, -61.9803, 10.0),
+        TdtTransmitter("La Plata", "La Plata", "AR", "ISDB-Tb", -34.9215, -57.9545, 3.0),
+        TdtTransmitter("Mar del Plata", "Mar del Plata", "AR", "ISDB-Tb", -38.0023, -57.5575, 5.0),
+        TdtTransmitter("Luján", "Luján", "AR", "ISDB-Tb", -34.5657, -59.1022, 1.0),
+        TdtTransmitter("Zárate", "Zárate", "AR", "ISDB-Tb", -34.0825, -59.0133, 1.0),
+        TdtTransmitter("Campana", "Campana", "AR", "ISDB-Tb", -34.1599, -58.9577, 1.0),
+        TdtTransmitter("San Pedro", "San Pedro", "AR", "ISDB-Tb", -33.6780, -59.6703, 1.0),
+        TdtTransmitter("San Nicolás de los Arroyos", "San Nicolás", "AR", "ISDB-Tb", -33.3328, -60.2235, 1.0),
+        TdtTransmitter("Pergamino", "Pergamino", "AR", "ISDB-Tb", -33.8886, -60.5659, 1.0),
+        TdtTransmitter("Junín", "Junín", "AR", "ISDB-Tb", -34.5870, -60.9471, 1.0),
+        TdtTransmitter("Mercedes", "Mercedes", "AR", "ISDB-Tb", -34.6527, -59.4310, 1.0),
+        TdtTransmitter("Chivilcoy", "Chivilcoy", "AR", "ISDB-Tb", -34.8979, -60.0205, 1.0),
+        TdtTransmitter("Bragado", "Bragado", "AR", "ISDB-Tb", -35.1196, -60.4892, 1.0),
+        TdtTransmitter("9 de Julio", "9 de Julio", "AR", "ISDB-Tb", -35.4476, -60.8845, 1.0),
+        TdtTransmitter("Lincoln", "Lincoln", "AR", "ISDB-Tb", -34.8641, -61.5287, 1.0),
+        TdtTransmitter("Pehuajó", "Pehuajó", "AR", "ISDB-Tb", -35.8444, -61.8947, 1.0),
+        TdtTransmitter("Trenque Lauquen", "Trenque Lauquen", "AR", "ISDB-Tb", -35.9726, -62.7289, 1.0),
+        TdtTransmitter("General Villegas", "General Villegas", "AR", "ISDB-Tb", -35.0342, -63.0139, 1.0),
+        TdtTransmitter("Azul", "Azul", "AR", "ISDB-Tb", -36.7808, -59.8583, 1.0),
+        TdtTransmitter("Olavarría", "Olavarría", "AR", "ISDB-Tb", -36.8927, -60.3226, 1.0),
+        TdtTransmitter("Tandil — Cerro El Centinela", "Tandil", "AR", "ISDB-Tb", -37.3050, -59.1000, 3.0),
+        TdtTransmitter("Bahía Blanca", "Bahía Blanca", "AR", "ISDB-Tb", -38.7183, -62.2663, 5.0),
+        TdtTransmitter("Necochea", "Necochea", "AR", "ISDB-Tb", -38.5545, -58.7375, 1.0),
+        TdtTransmitter("Tres Arroyos", "Tres Arroyos", "AR", "ISDB-Tb", -38.3765, -60.2761, 1.0),
+        TdtTransmitter("Coronel Suárez", "Coronel Suárez", "AR", "ISDB-Tb", -37.4586, -61.9337, 1.0),
+
+        // — Resto del país —
         TdtTransmitter("Cerro Champaquí", "Córdoba", "AR", "ISDB-Tb", -31.9843, -64.9323, 10.0),
         TdtTransmitter("Rosario Centro", "Rosario", "AR", "ISDB-Tb", -32.9442, -60.6505, 5.0),
         TdtTransmitter("Cerro de la Gloria", "Mendoza", "AR", "ISDB-Tb", -32.8846, -68.8457, 10.0),
         TdtTransmitter("San Miguel de Tucumán", "Tucumán", "AR", "ISDB-Tb", -26.8241, -65.2226, 5.0),
-        TdtTransmitter("Mar del Plata", "Mar del Plata", "AR", "ISDB-Tb", -38.0023, -57.5575, 5.0),
         TdtTransmitter("Salta Capital", "Salta", "AR", "ISDB-Tb", -24.7859, -65.4116, 5.0),
         TdtTransmitter("Santa Fe Capital", "Santa Fe", "AR", "ISDB-Tb", -31.6272, -60.6988, 5.0),
         TdtTransmitter("San Juan Capital", "San Juan", "AR", "ISDB-Tb", -31.5375, -68.5364, 5.0),
-        TdtTransmitter("La Plata", "La Plata", "AR", "ISDB-Tb", -34.9215, -57.9545, 3.0),
         TdtTransmitter("Neuquén Capital", "Neuquén", "AR", "ISDB-Tb", -38.9516, -68.0591, 5.0),
         TdtTransmitter("Bariloche", "Río Negro", "AR", "ISDB-Tb", -41.1335, -71.3103, 5.0),
         TdtTransmitter("Comodoro Rivadavia", "Chubut", "AR", "ISDB-Tb", -45.8647, -67.4973, 5.0),
@@ -353,7 +382,10 @@ object TdtDatabase {
 
     /** Busca por nombre o ciudad con distancia opcional */
     fun search(query: String, lat: Double? = null, lon: Double? = null): List<Pair<TdtTransmitter, Double?>> =
-        transmitters
+        search(query, lat, lon, transmitters)
+
+    fun search(query: String, lat: Double? = null, lon: Double? = null, source: List<TdtTransmitter>): List<Pair<TdtTransmitter, Double?>> =
+        source
             .filter {
                 it.name.contains(query, ignoreCase = true) ||
                 it.city.contains(query, ignoreCase = true) ||

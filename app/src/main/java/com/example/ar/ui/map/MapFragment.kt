@@ -82,6 +82,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
     private var mapAzimuth = 0f
     private var mapTargetBearing = Double.NaN
     private var mapWasAligned = false
+    private var lastMapBearing = -999f
+    private var lastCameraRotateMs = 0L
 
     // Actualización continua de ubicación
     private val locationCallback = object : LocationCallback() {
@@ -203,6 +205,21 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
     override fun onOrientation(azimuth: Float, pitch: Float, roll: Float, mode: OrientationManager.Mode) {
         mapAzimuth = azimuth
         checkMapAlignment()
+        val now = System.currentTimeMillis()
+        val diff = Math.abs(azimuth - lastMapBearing).let { if (it > 180f) 360f - it else it }
+        if (diff >= 2f && now - lastCameraRotateMs >= 100L) {
+            rotateMapCamera(azimuth)
+            lastMapBearing = azimuth
+            lastCameraRotateMs = now
+        }
+    }
+
+    private fun rotateMapCamera(bearing: Float) {
+        val map = googleMap ?: return
+        val pos = com.google.android.gms.maps.model.CameraPosition.Builder(map.cameraPosition)
+            .bearing(bearing)
+            .build()
+        map.moveCamera(CameraUpdateFactory.newCameraPosition(pos))
     }
 
     private fun checkMapAlignment() {

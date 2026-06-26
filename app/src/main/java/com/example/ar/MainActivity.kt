@@ -59,6 +59,15 @@ class MainActivity : AppCompatActivity() {
         val navController = navHost.navController
 
         binding.bottomNav.setupWithNavController(navController)
+        // Material3 ignora itemIconTint="@null" del XML — hay que forzarlo en código
+        // y recargar cada ícono para que use su propio color
+        binding.bottomNav.itemIconTintList = null
+        binding.bottomNav.menu.findItem(R.id.compassFragment)?.icon =
+            androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_nav_compass)
+        binding.bottomNav.menu.findItem(R.id.mapFragment)?.icon =
+            androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_nav_map)
+        binding.bottomNav.menu.findItem(R.id.arFragment)?.icon =
+            androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_nav_ar)
 
         // Bloquear tab AR si no es Pro.
         // Usa sharedVm.isPro como única fuente de verdad: así respeta
@@ -74,7 +83,11 @@ class MainActivity : AppCompatActivity() {
         // Billing: en release actualiza el estado Pro desde Google Play.
         // En debug, ProManager.isPro() ya maneja DEBUG_FORCE_FREE → no pisamos.
         billingManager = BillingManager(this) { isPro ->
-            if (!BuildConfig.DEBUG) sharedVm.isPro.postValue(isPro)
+            if (!BuildConfig.DEBUG) {
+                // Si billing devuelve false, la verificación local (TESTING_MODE) tiene prioridad
+                if (isPro) sharedVm.isPro.postValue(true)
+                else sharedVm.isPro.postValue(ProManager.isPro(this))
+            }
         }
         billingManager.connect()
 

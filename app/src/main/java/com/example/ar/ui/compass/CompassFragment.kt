@@ -2,7 +2,9 @@ package com.example.ar.ui.compass
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.location.Geocoder
 import android.location.Location
 import android.os.Build
@@ -33,10 +35,12 @@ import com.example.ar.ProximityBeeper
 import com.example.ar.R
 import com.example.ar.SettingsDialog
 import com.example.ar.SharedViewModel
+import com.example.ar.TargetPoint
 import com.example.ar.ThemeManager
 import com.example.ar.antenna.AntennaPickerDialog
 import com.example.ar.antenna.AntennaType
 import com.example.ar.tdt.TdtPickerDialog
+import com.example.ar.wifi.WifiNetwork
 import com.example.ar.wifi.WifiScannerDialog
 import com.example.ar.databinding.FragmentCompassBinding
 import com.example.ar.satellite.SatelliteCalculator
@@ -205,8 +209,9 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         sharedVm.liveWifiRssi.observe(viewLifecycleOwner) { rssi ->
             val wifi = sharedVm.trackedWifi.value ?: return@observe
             if (rssi != null) {
-                binding.tvSelectedSat.text = "📶 ${wifi.ssid}  $rssi dBm"
-                binding.txtDistance.text = "$rssi dBm"
+                val current = wifi.copy(rssi = rssi)
+                binding.tvSelectedSat.text = "📶 ${wifi.ssid}  $rssi dBm  ${current.signalLabel}"
+                binding.txtDistance.text = "${current.estimatedDistance}  ($rssi dBm)"
             }
         }
 
@@ -216,8 +221,23 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             updateReadouts()
         }
 
-        // Observar transmisor TDT
-        sharedVm.selectedTdt.observe(viewLifecycleOwner) { updateReadouts() }
+        // Observar transmisor TDT — sincronizar target para que mapa y AR apunten al transmisor
+        sharedVm.selectedTdt.observe(viewLifecycleOwner) { tdt ->
+            if (tdt != null) {
+                sharedVm.target.value = TargetPoint(tdt.lat, tdt.lon, "📺 ${tdt.name}")
+            }
+            updateReadouts()
+        }
+
+        // Tap en el nombre del objetivo → abrir en Google Maps (solo modo TDT)
+        binding.tvSelectedSat.setOnClickListener {
+            val tdt = sharedVm.selectedTdt.value ?: return@setOnClickListener
+            val uri = Uri.parse("geo:${tdt.lat},${tdt.lon}?q=${tdt.lat},${tdt.lon}(${Uri.encode(tdt.name)})")
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            if (intent.resolveActivity(requireContext().packageManager) != null) {
+                startActivity(intent)
+            }
+        }
 
         // Observar objetivo de mapa
         sharedVm.target.observe(viewLifecycleOwner) { updateReadouts() }

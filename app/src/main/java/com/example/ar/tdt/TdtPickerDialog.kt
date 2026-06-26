@@ -18,7 +18,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class TdtPickerDialog(
     private val location: Location?,
-    private val countryCode: String? = null,   // ISO 3166-1 alpha-2, ej: "AR", "ES"
+    private val countryCode: String? = null,
     private val onSelected: (TdtTransmitter) -> Unit
 ) : DialogFragment() {
 
@@ -31,10 +31,6 @@ class TdtPickerDialog(
         val etSearch = view.findViewById<EditText>(R.id.etTdtSearch)
         val rv       = view.findViewById<RecyclerView>(R.id.rvTdtTransmitters)
 
-        // Lista inicial:
-        //  1. Si hay código de país → transmisores del país del usuario, ordenados por distancia
-        //  2. Si no hay código pero hay GPS → 30 más cercanos
-        //  3. Sin GPS → todo el mundo
         val initial = buildInitialList()
 
         adapter = TdtAdapter(initial) { transmitter ->
@@ -53,7 +49,6 @@ class TdtPickerDialog(
                 val results = if (query.isBlank()) {
                     buildInitialList()
                 } else {
-                    // Al buscar, filtrar dentro del país si lo conocemos
                     if (countryCode != null) {
                         TdtDatabase.search(query, location?.latitude, location?.longitude)
                             .filter { it.first.country.equals(countryCode, ignoreCase = true) }
@@ -75,7 +70,6 @@ class TdtPickerDialog(
         return when {
             countryCode != null -> {
                 val local = TdtDatabase.byCountry(countryCode, location?.latitude, location?.longitude)
-                // Si hay transmisores del país, mostrarlos. Si no (país sin datos), caer a nearest
                 local.ifEmpty {
                     if (location != null)
                         TdtDatabase.nearest(location.latitude, location.longitude, 30)
@@ -127,23 +121,17 @@ class TdtAdapter(
             tvName.text     = t.name
             tvCity.text     = t.city
             tvStandard.text = t.standard
-
-            // Mostrar distancia si está disponible
             tvDistance.text = when {
-                distKm == null       -> ""
-                distKm < 1.0         -> "< 1 km"
-                distKm < 1000.0      -> "%.0f km".format(distKm)
-                else                 -> "%.0f km".format(distKm)
+                distKm == null  -> ""
+                distKm < 1.0   -> "< 1 km"
+                else           -> "%.0f km".format(distKm)
             }
-
-            // Color del texto de distancia según cercanía
             tvDistance.setTextColor(when {
-                distKm == null       -> 0xFF00E5FF.toInt()
-                distKm < 100         -> 0xFF00FF88.toInt()   // verde = muy cerca
-                distKm < 500         -> 0xFFFFB300.toInt()   // ámbar = medio
-                else                 -> 0xFF7A8CA8.toInt()   // gris = lejos
+                distKm == null  -> 0xFF00E5FF.toInt()
+                distKm < 100   -> 0xFF00FF88.toInt()
+                distKm < 500   -> 0xFFFFB300.toInt()
+                else           -> 0xFF7A8CA8.toInt()
             })
-
             itemView.setOnClickListener { onClick(t) }
         }
     }

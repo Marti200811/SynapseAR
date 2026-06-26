@@ -43,4 +43,20 @@ data class WifiNetwork(
         rssi >= -80 -> "Débil"
         else        -> "Muy débil"
     }
+
+    /**
+     * Distancia estimada al router usando log-distance path loss (n=3 para interiores).
+     * Referencia a 1m: -40 dBm en 2.4 GHz, -47 dBm en 5/6 GHz.
+     */
+    val estimatedDistance: String get() {
+        val refDbm = if (frequency < 3000) -40 else -47
+        val distM  = Math.pow(10.0, (refDbm - rssi) / 30.0)   // /30 = 10*n, n=3
+        return when {
+            distM <  2  -> "~1m"
+            distM <  10 -> "~${distM.toInt()}m"
+            distM <  50 -> "~${((distM / 5).toInt() * 5)}m"
+            distM < 100 -> "~${((distM / 10).toInt() * 10)}m"
+            else        -> ">100m"
+        }
+    }
 }

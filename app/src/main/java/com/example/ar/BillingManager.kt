@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  *
  * En Play Console crear:
  *   Tipo: Producto dentro de la app (pago único)
- *   ID del producto: synapse_ar_pro
+ *   ID del producto: synapse-ar-pro
  *   Precio base: $9.99
  */
 class BillingManager(
@@ -24,7 +24,7 @@ class BillingManager(
 ) : PurchasesUpdatedListener {
 
     companion object {
-        const val SKU_PRO = "synapse_ar_pro"
+        const val SKU_PRO = "synapse-ar-pro"
         private const val RECONNECT_DELAY_MS = 5_000L
     }
 
