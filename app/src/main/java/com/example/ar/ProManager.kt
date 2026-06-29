@@ -21,8 +21,7 @@ object ProManager {
      */
     private const val DEBUG_FORCE_FREE = false
 
-    /** Cambiar a false antes del lanzamiento en producción. */
-    private const val TESTING_MODE = true
+    private const val TESTING_MODE = false
 
     fun isPro(context: Context): Boolean {
         if (BuildConfig.DEBUG) return !DEBUG_FORCE_FREE

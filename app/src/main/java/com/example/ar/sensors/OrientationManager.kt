@@ -6,6 +6,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.Surface
 import android.view.WindowManager
 import kotlin.math.abs
@@ -20,6 +22,7 @@ class OrientationManager(private val context: Context) : SensorEventListener {
     interface Listener {
         fun onOrientation(azimuth: Float, pitch: Float, roll: Float, mode: Mode)
         fun onCalibrationChanged(accuracy: Int) {}
+        fun onSensorStalled(restartCount: Int) {}   // brújula reconectando
     }
 
     private val sensorManager =
@@ -51,29 +54,71 @@ class OrientationManager(private val context: Context) : SensorEventListener {
 
     var listener: Listener? = null
 
-    fun start() {
-        val primary = geoRotVector ?: rotVector
-        primary?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
-        }
-        magnetometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+    // Watchdog: TYPE_GEOMAGNETIC_ROTATION_VECTOR puede stallarse sin aviso (bug Android/Motorola).
+    // Chequeo cada 500ms; si no llegó ningún evento en 1s, re-registramos el sensor.
+    // Tras 3 reinicios consecutivos sin estabilizarse, caemos al TYPE_ROTATION_VECTOR como
+    // último recurso (tiene giroscopio — más estable aunque con leve drift).
+    private var lastEventMs = 0L
+    private var stallRestartCount = 0
+    private var useGeoFallback = true   // false = forzar rotVector por demasiados stalls
+    private val watchdogHandler = Handler(Looper.getMainLooper())
+    private val watchdogRunnable = object : Runnable {
+        override fun run() {
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (lastEventMs > 0 && now - lastEventMs > 1000L) {
+                stallRestartCount++
+                sensorManager.unregisterListener(this@OrientationManager)
+                if (stallRestartCount > 3 && geoRotVector != null && rotVector != null) {
+                    useGeoFallback = false   // demasiados stalls: usar giroscopio
+                }
+                registerSensors()
+                listener?.onSensorStalled(stallRestartCount)
+            }
+            watchdogHandler.postDelayed(this, 500L)
         }
     }
 
+    private fun registerSensors() {
+        // Handler explícito en Main thread: garantiza que onSensorChanged y el watchdog
+        // corran en el mismo thread, eliminando la race condition sobre las matrices.
+        val h = watchdogHandler
+        val primary = if (useGeoFallback) (geoRotVector ?: rotVector) else rotVector
+        primary?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME, h) }
+        magnetometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL, h) }
+    }
+
+    fun start() {
+        stallRestartCount = 0
+        useGeoFallback    = true
+        lastEventMs       = android.os.SystemClock.elapsedRealtime()
+        registerSensors()
+        watchdogHandler.postDelayed(watchdogRunnable, 500L)
+    }
+
     fun stop() {
+        watchdogHandler.removeCallbacks(watchdogRunnable)
         sensorManager.unregisterListener(this)
-        smoothAzimuth = -1f
-        lastNotifyMs  = 0L
-        currentMode   = Mode.HORIZONTAL
+        smoothAzimuth     = -1f
+        lastNotifyMs      = 0L
+        lastEventMs       = 0L
+        stallRestartCount = 0
+        useGeoFallback    = true
+        currentMode       = Mode.HORIZONTAL
     }
 
     override fun onSensorChanged(event: SensorEvent) {
         val isGeoVec = event.sensor.type == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR
         val isRotVec = event.sensor.type == Sensor.TYPE_ROTATION_VECTOR
+        // Actualizar watchdog con eventos del sensor activo (geo o rot según useGeoFallback)
+        val isActiveSensor = isGeoVec || (isRotVec && (geoRotVector == null || !useGeoFallback))
+        if (isActiveSensor) {
+            lastEventMs = android.os.SystemClock.elapsedRealtime()
+            // stallRestartCount no se resetea por un evento aislado: solo en start().
+            // Así el contador de stalls acumula correctamente hasta el fallback a rotVector.
+        }
         if (!isGeoVec && !isRotVec) return
-        // Si tenemos GEOMAGNETIC, ignorar eventos del ROTATION_VECTOR normal
-        if (geoRotVector != null && isRotVec) return
+        // Ignorar rotVector si estamos usando geoRotVector (a menos que hayamos caído al fallback)
+        if (geoRotVector != null && isRotVec && useGeoFallback) return
 
         SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 

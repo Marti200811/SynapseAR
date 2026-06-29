@@ -324,8 +324,9 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 binding.txtBearing.text   = "%03.0f°".format(bearing)
                 binding.txtElevation.text = "--°"
                 binding.txtDistance.text  = GeoUtils.formatDistance(distance, requireContext())
-                binding.compass.targetBearing  = bearing.toFloat()
-                binding.compass.distanceMeters = distance
+                binding.compass.targetBearing   = bearing.toFloat()
+                binding.compass.targetElevation = null
+                binding.compass.distanceMeters  = distance
                 lastTargetBearing = bearing
             }
 
@@ -371,6 +372,13 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 CalibrationDialog().show(parentFragmentManager, "calib")
             }
         }
+    }
+
+    override fun onSensorStalled(restartCount: Int) {
+        val b = _binding ?: return
+        // Atenuamos la brújula brevemente para indicar reconexión del sensor
+        b.compass.alpha = 0.4f
+        b.compass.postDelayed({ b.compass.alpha = 1f }, 800L)
     }
 
     private fun showThemePicker() {
