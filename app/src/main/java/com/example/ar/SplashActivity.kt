@@ -3,6 +3,10 @@ package com.example.ar
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
 import android.os.Bundle
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -14,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -88,7 +93,10 @@ class SplashActivity : AppCompatActivity() {
             startDelay = 1600
         }
 
-        // ── 7. Lanzar todas las animaciones ──────────────────────────────────
+        // ── 7. Morse "VECTRIX" sincronizado con las animaciones ───────────────
+        playMorseVectrix()
+
+        // ── 8. Lanzar todas las animaciones ──────────────────────────────────
         pulseScale.start()
         iconAnim.start()
         titleAnim.start()
@@ -136,4 +144,98 @@ class SplashActivity : AppCompatActivity() {
     // Evitar que el botón atrás cierre el splash
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() { /* no-op */ }
+
+    // ── Morse "VECTRIX" — onda sinusoidal pura 700 Hz generada en tiempo real ─
+    //
+    // V=...-  E=.  C=-.-.  T=-  R=.-.  I=..  X=-..-
+    //
+    // Timing: U=40ms/unidad → 63U totales = 2520ms
+    // Arranca a los 100ms para coincidir con el primer pulso del splash.
+    // El buffer completo (111132 muestras ≈ 217KB) se carga en MODE_STATIC
+    // para reproducción exacta y sin cortes.
+    // Respeta el modo silencio/vibración.
+    private fun playMorseVectrix() {
+        val am = getSystemService(AUDIO_SERVICE) as AudioManager
+        if (am.ringerMode != AudioManager.RINGER_MODE_NORMAL) return
+
+        // V=...-  E=.  C=-.-.  T=-  R=.-.  I=..  X=-..-
+        val morse = listOf(
+            intArrayOf(1, 1, 1, 3), // V  → 12U
+            intArrayOf(1),           // E  →  4U
+            intArrayOf(3, 1, 3, 1), // C  → 14U
+            intArrayOf(3),           // T  →  6U
+            intArrayOf(1, 3, 1),    // R  → 10U
+            intArrayOf(1, 1),        // I  →  6U
+            intArrayOf(3, 1, 1, 3)  // X  → 11U  (sin silencio final)
+        )                            // TOTAL: 63U × 40ms = 2520ms
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(100L)   // sincronizar con el primer pulso visual del splash
+
+            val sampleRate  = 44100
+            val U           = 40              // ms por unidad Morse
+            val freqHz      = 700             // Hz — frecuencia clásica CW
+            val samplesPerU = sampleRate * U / 1000   // = 1764 muestras
+            val totalSamples = samplesPerU * 63        // = 111132 muestras
+            val fadeSamples  = sampleRate * 8 / 1000  // 8ms fade-in/out por elemento
+
+            val buf = ShortArray(totalSamples)
+            var pos = 0
+
+            fun writeTone(units: Int) {
+                val n = samplesPerU * units
+                for (i in 0 until n) {
+                    val angle = 2.0 * Math.PI * i * freqHz / sampleRate
+                    val env = when {
+                        i < fadeSamples         -> i.toDouble() / fadeSamples
+                        i > n - fadeSamples - 1 -> (n - 1 - i).toDouble() / fadeSamples
+                        else                    -> 1.0
+                    }
+                    buf[pos++] = (Math.sin(angle) * 32767 * 0.65 * env).toInt().toShort()
+                }
+            }
+
+            fun writeSilence(units: Int) {
+                repeat(samplesPerU * units) { buf[pos++] = 0 }
+            }
+
+            morse.forEachIndexed { li, letter ->
+                letter.forEachIndexed { ei, units ->
+                    writeTone(units)
+                    when {
+                        ei < letter.size - 1 -> writeSilence(1)   // gap intra-letra
+                        li < morse.size - 1  -> writeSilence(3)   // gap inter-letra
+                        // último elemento de la última letra: sin silencio
+                    }
+                }
+            }
+
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setSampleRate(sampleRate)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build()
+                )
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .setBufferSizeInBytes(buf.size * 2)
+                .build()
+
+            try {
+                track.write(buf, 0, buf.size)
+                track.play()
+                delay(2600L)   // esperar que termine la reproducción
+            } finally {
+                track.stop()
+                track.release()
+            }
+        }
+    }
 }
