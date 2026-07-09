@@ -97,6 +97,11 @@ class MainActivity : AppCompatActivity() {
         // Ocultar banner si es Pro
         sharedVm.isPro.observe(this) { isPro ->
             binding.adBanner.visibility = if (isPro) View.GONE else View.VISIBLE
+            // Ocultar el tab AR para usuarios no-Pro: así el icono nunca queda
+            // "muerto" (antes rebotaba con popBackStack y parecía no responder,
+            // lo que Google Play marcó como Broken Functionality). El tab reaparece
+            // automáticamente en cuanto el usuario compra Pro.
+            binding.bottomNav.menu.findItem(R.id.arFragment)?.isVisible = isPro
         }
 
         // En debug con DEBUG_FORCE_FREE activo: mostrar snackbar indicador

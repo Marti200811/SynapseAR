@@ -118,6 +118,10 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 CalibrationDialog().show(parentFragmentManager, "calib")
             } else if (ProManager.isPro(requireContext())) {
                 showThemePicker()
+            } else {
+                // No-Pro: mostrar el diálogo de upgrade en vez de no hacer nada.
+                // Evita una interacción "muerta" (Broken Functionality en Play).
+                (requireActivity() as MainActivity).showUpgradeDialog()
             }
         }
 
