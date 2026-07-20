@@ -1,5 +1,5 @@
 # CLAUDE_MEMORY
-_Última actualización: 2026-06-26_
+_Última actualización: 2026-07-13_
 
 ## Proyecto
 - **Nombre**: SynapseAR
@@ -8,17 +8,18 @@ _Última actualización: 2026-06-26_
 - **applicationId**: `com.quantixlabs.synapsear`
 - **Objetivo**: App orientación de antenas con guía AR, base de datos global de satélites, modo offline
 
-## Estado actual (2026-06-26)
-- **Última tarea**: Rediseño estético HUD aplicado al app real — funcionando en ZY32LK2337
-- **versionCode en Play**: 7 / versionName 1.0.6 (subido a prueba cerrada)
-- **APK debug en dispositivo**: v7 base + rediseño estético de la sesión 2026-06-26
+## Estado actual (2026-07-13)
+- **Última tarea**: Implementado TODO en `data_extraction_rules.xml` — reglas de backup para `synapse_prefs`
+- **versionCode en Play**: 9 / versionName 1.0.7
+- **PR abierto**: backup rules → rama `claude/todo-implementation-kmsTV` → master
 
 ## Pendiente para publicar
 1. Fotografiar app real en dispositivo (sin cable USB) para screenshots Play Store
 2. Setear `TESTING_MODE = false` en ProManager.kt antes de release público
 3. Crear producto in-app `synapse_ar_pro` (PAGO ÚNICO $9.99) en Play Console si no existe
-4. Build release AAB (versionCode=8): `$env:JAVA_HOME="C:\jdk17\jdk-17.0.14+7"; .\gradlew bundleRelease`
+4. Build release AAB (versionCode=10): `$env:JAVA_HOME="C:\jdk17\jdk-17.0.14+7"; .\gradlew bundleRelease`
 5. Política de privacidad: https://marti200811.github.io/SynapseAR/privacy.html ✓ (ya hosteada)
+6. Mergear PR de backup rules cuando esté aprobado
 
 ## Decisiones arquitecturales clave
 - OrientationManager: NO modificar (alpha=0.20, dual-matrix, 30Hz) — cualquier cambio rompe la brújula
@@ -26,6 +27,7 @@ _Última actualización: 2026-06-26_
 - Material3 BottomNav: `itemIconTintList = null` en código + `setIcon()` por tab (XML `@null` solo no funciona)
 - Brújula: siempre probar sin cable USB (el cable interfiere con el magnetómetro)
 - MapFragment/ArFragment: usan `sharedVm.target` como fuente de verdad para líneas/overlays
+- `synapse_prefs` (SharedPreferences): único archivo de datos del usuario — preferencias, tema, historial, favoritos, caché Pro
 
 ## Convenciones
 - Idioma del proyecto: español; respuestas de Claude: español, concisas
