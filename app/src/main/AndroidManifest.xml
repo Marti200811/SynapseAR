@@ -28,13 +28,17 @@
             android:value="${MAPS_API_KEY}"/>
 
         <!--
-            AdMob App ID.
-            TEST ID → funciona sin cuenta AdMob (solo muestra ads de prueba).
-            PRODUCCIÓN → reemplazá con tu ID real de https://admob.google.com
+            AdMob App ID → app "SynapseAR: Antena Parabólica" (~5110678257).
+            Es la app VERIFICADA ("Acreditado"), aprobada ("Lista") y vinculada a
+            la ficha de Play (com.quantixlabs.synapsear).
+
+            ⚠️ NO volver a ~1056694271 ("Synapse AR"): es una app duplicada, sin
+            tienda vinculada y en estado "Debe revisarse". El código apuntaba ahí
+            por error hasta el 2026-09-01.
         -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5417760954645863~1056694271"/>
+            android:value="ca-app-pub-5417760954645863~5110678257"/>
 
         <!-- Resuelve conflicto de merger entre AdMob y Firebase Analytics -->
         <property

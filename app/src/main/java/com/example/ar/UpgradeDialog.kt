@@ -17,6 +17,9 @@ class UpgradeDialog : DialogFragment() {
     /** La activity pasa su BillingManager para poder lanzar la compra */
     var billingManager: BillingManager? = null
 
+    /** Función bloqueada que trajo al usuario acá — se registra en Analytics. */
+    var source: String = "unknown"
+
     private var btnBuy: MaterialButton? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -25,6 +28,9 @@ class UpgradeDialog : DialogFragment() {
 
         btnBuy = view.findViewById<MaterialButton>(R.id.btnBuyPro).apply {
             setOnClickListener {
+                // Se registra ANTES de lanzar la compra: mide intención aunque
+                // el flujo de Google Play falle (ej. perfil de pagos incompleto).
+                Analytics.upgradeButtonTapped(requireContext(), source)
                 billingManager?.launchPurchase()
                 dismiss()
             }

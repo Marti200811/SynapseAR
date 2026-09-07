@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.ar.Analytics
 import com.example.ar.MainActivity
 import com.example.ar.ProManager
 import com.example.ar.R
@@ -59,7 +60,8 @@ class SatellitePickerDialog(
                 onSelected(satellite)
                 dismiss()
             } else {
-                (requireActivity() as MainActivity).showUpgradeDialog()
+                (requireActivity() as MainActivity)
+                    .showUpgradeDialog(Analytics.SRC_SATELLITE_LOCKED)
             }
         }
 

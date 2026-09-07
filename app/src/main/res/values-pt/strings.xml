@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- General -->
-    <string name="app_name">Synapse AR</string>
+    <string name="app_name">Antena AR</string>
     <string name="no_value">--</string>
     <string name="no_angle">--°</string>
 
@@ -67,10 +67,12 @@
     <string name="upgrade_feature_tdt">📺  Base de dados TDT mundial</string>
     <string name="upgrade_feature_ar">🎯  Tela AR com guia visual</string>
     <string name="upgrade_feature_noads">🚫  Sem publicidade</string>
-    <string name="upgrade_btn_buy">🎁 Testar 7 dias grátis — depois $9.99/ano</string>
-    <string name="upgrade_btn_restore">Restaurar assinatura anterior</string>
+    <string name="upgrade_btn_buy">✨ Desbloquear Pro</string>
+    <string name="upgrade_btn_buy_price">✨ Desbloquear Pro — %1$s</string>
+    <string name="upgrade_btn_restore">Restaurar compra anterior</string>
     <string name="upgrade_btn_later">Talvez depois</string>
-    <string name="upgrade_trial_note">Sem cobrança nos primeiros 7 dias. Cancele quando quiser.</string>
+    <string name="upgrade_trial_note">Pagamento único. Sem assinatura nem cobranças recorrentes.</string>
+    <string name="pro_purchase_unavailable">A compra não está disponível no momento. Verifique sua conexão e tente novamente mais tarde.</string>
 
     <!-- Settings -->
     <string name="settings_units_label">Sistema de unidades</string>

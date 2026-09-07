@@ -10,9 +10,12 @@ class SynapseApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Firebase Crashlytics (no requiere consentimiento del usuario)
+        // Firebase Crashlytics (no requiere consentimiento del usuario).
+        // Desactivado en debug: los crashes de desarrollo ensuciaban los datos
+        // de usuarios reales, justo el panel que hay que mirar cuando algo falla.
         FirebaseApp.initializeApp(this)
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
+        FirebaseCrashlytics.getInstance()
+            .setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
 
         // Defaults de Remote Config temprano, para que cualquier lectura
         // (ej. flags de promo en UpgradeDialog) tenga valores seguros aunque

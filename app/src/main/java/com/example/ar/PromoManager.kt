@@ -10,28 +10,41 @@ import java.util.Currency
  * La promo se controla 100% desde Firebase Remote Config — sin actualizar la app:
  *   promo_active            (bool)  → true mientras la promo esté vigente
  *   promo_discount_percent  (long)  → % de descuento REAL (1-99)
+ *   promo_end_epoch_millis  (long)  → timestamp (ms UTC) en que expira la promo.
+ *                                     0 = sin fecha de fin (dura hasta apagarla a mano).
+ *                                     Si now >= este valor, la promo se apaga sola.
  *
  * El precio ancla (tachado) se calcula a partir del precio actual de Google
  * (ya localizado en la moneda del usuario), de modo que:
  *   - solo aparece cuando hay una promo real activa (honesto / política de Play)
  *   - se muestra en la moneda local de cada usuario
  *   - se apaga remotamente cuando termina la promo
+ *   - expira sola en la fecha de fin, sin tener que acordarse de apagarla
  *
- * Ejemplo: precio base $9.99, promo a $4.99 (50% off) →
- *          promo_active=true, promo_discount_percent=50 →
- *          la app calcula ancla ≈ $9.98 y la muestra tachada junto a $4.99.
+ * Ejemplo: precio base $9.99, promo a $4.99 (50% off) por 60 días →
+ *          promo_active=true, promo_discount_percent=50,
+ *          promo_end_epoch_millis = (hoy + 60 días en ms) →
+ *          la app calcula ancla ≈ $9.98 y la muestra tachada junto a $4.99,
+ *          y deja de mostrarla automáticamente al llegar la fecha de fin.
  */
 object PromoManager {
 
     private const val RC_PROMO_ACTIVE = "promo_active"
     private const val RC_PROMO_DISCOUNT = "promo_discount_percent"
+    private const val RC_PROMO_END = "promo_end_epoch_millis"
 
-    /** ¿Hay una promo válida activa? */
+    /** ¿Hay una promo válida activa (y no expirada)? */
     fun isPromoActive(): Boolean {
         val rc = FirebaseRemoteConfig.getInstance()
         val active = rc.getBoolean(RC_PROMO_ACTIVE)
         val discount = rc.getLong(RC_PROMO_DISCOUNT)
-        return active && discount in 1..99
+        if (!active || discount !in 1..99) return false
+
+        // Expiración automática: si hay fecha de fin y ya pasó, la promo terminó.
+        val endMillis = rc.getLong(RC_PROMO_END)
+        if (endMillis > 0L && System.currentTimeMillis() >= endMillis) return false
+
+        return true
     }
 
     /**

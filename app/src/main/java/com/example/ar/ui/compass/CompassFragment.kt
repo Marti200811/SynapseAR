@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import com.example.ar.Analytics
 import com.example.ar.CalibrationDialog
 import com.example.ar.CompassTheme
 import com.example.ar.MainActivity
@@ -126,7 +127,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             if (ProManager.isPro(requireContext())) {
                 showThemePicker()
             } else {
-                (requireActivity() as MainActivity).showUpgradeDialog()
+                (requireActivity() as MainActivity)
+                    .showUpgradeDialog(Analytics.SRC_COMPASS_THEME)
             }
             true
         }
@@ -151,7 +153,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                             sharedVm.trackedWifi.value = network
                         }.show(parentFragmentManager, "wifi_scanner")
                     } else {
-                        (requireActivity() as MainActivity).showUpgradeDialog()
+                        (requireActivity() as MainActivity)
+                            .showUpgradeDialog(Analytics.SRC_WIFI_SCANNER)
                     }
                 }
                 AntennaType.TDT -> {
@@ -161,7 +164,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                             sharedVm.selectedTdt.value = transmitter
                         }.show(parentFragmentManager, "tdt_picker")
                     } else {
-                        (requireActivity() as MainActivity).showUpgradeDialog()
+                        (requireActivity() as MainActivity)
+                            .showUpgradeDialog(Analytics.SRC_TDT_PICKER)
                     }
                 }
                 else -> {

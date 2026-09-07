@@ -24,15 +24,15 @@ val hasReleaseKeystore = keystorePropertiesFile.exists()
 
 android {
     namespace = "com.example.ar"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
 
         applicationId = "com.quantixlabs.synapsear"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 9
-        versionName = "1.0.7"
+        targetSdk = 36
+        versionCode = 14
+        versionName = "1.1.1"
     }
 
     signingConfigs {

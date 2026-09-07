@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
             if (destination.id == R.id.arFragment
                 && sharedVm.isPro.value != true) {
                 navController.popBackStack()
-                showUpgradeDialog()
+                showUpgradeDialog(Analytics.SRC_AR_TAB)
             }
         }
 
@@ -171,9 +171,15 @@ class MainActivity : AppCompatActivity() {
 
     // ── Upgrade dialog ────────────────────────────────────────────────────
 
-    fun showUpgradeDialog() {
+    /**
+     * @param source cuál de las funciones bloqueadas trajo al usuario acá.
+     *        Se registra en Analytics para saber qué función vende (ver [Analytics]).
+     */
+    fun showUpgradeDialog(source: String) {
+        Analytics.upgradeDialogShown(this, source)
         val dialog = UpgradeDialog()
         dialog.billingManager = billingManager
+        dialog.source = source
         dialog.show(supportFragmentManager, "upgrade")
     }
 

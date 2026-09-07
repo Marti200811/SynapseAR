@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  *
  * En Play Console crear:
  *   Tipo: Producto dentro de la app (pago único)
- *   ID del producto: synapse-ar-pro
+ *   ID del producto: synapse_ar_pro   (Play Console NO permite guiones, solo _ . minúsculas y números)
  *   Precio base: $9.99
  */
 class BillingManager(
@@ -24,7 +24,7 @@ class BillingManager(
 ) : PurchasesUpdatedListener {
 
     companion object {
-        const val SKU_PRO = "synapse-ar-pro"
+        const val SKU_PRO = "synapse_ar_pro"
         private const val RECONNECT_DELAY_MS = 5_000L
     }
 
@@ -34,7 +34,9 @@ class BillingManager(
 
     private val billingClient: BillingClient = BillingClient.newBuilder(activity)
         .setListener(this)
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()
+        )
         .build()
 
     /** Detalles del producto cacheados tras consultar a Google Play. */
@@ -87,10 +89,10 @@ class BillingManager(
                     .build()
             )).build()
 
-        billingClient.queryProductDetailsAsync(params) { result, productDetailsList ->
+        billingClient.queryProductDetailsAsync(params) { result, queryResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK &&
-                productDetailsList.isNotEmpty()) {
-                val details = productDetailsList[0]
+                queryResult.productDetailsList.isNotEmpty()) {
+                val details = queryResult.productDetailsList[0]
                 proDetails = details
                 val offer = details.oneTimePurchaseOfferDetails
                 val price = offer?.formattedPrice
@@ -139,11 +141,29 @@ class BillingManager(
                     .build()
             )).build()
 
-        billingClient.queryProductDetailsAsync(params) { result, productDetailsList ->
+        billingClient.queryProductDetailsAsync(params) { result, queryResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK &&
-                productDetailsList.isNotEmpty()) {
-                proDetails = productDetailsList[0]
-                launchFlow(productDetailsList[0])
+                queryResult.productDetailsList.isNotEmpty()) {
+                val details = queryResult.productDetailsList[0]
+                proDetails = details
+                launchFlow(details)
+            } else {
+                // El botón NUNCA debe quedar mudo (política Play "funcionalidad defectuosa"):
+                // si el producto no está disponible, dar feedback visible en lugar de no hacer nada.
+                notifyUnavailable()
+            }
+        }
+    }
+
+    /** Feedback visible cuando la compra no puede iniciarse (producto no disponible/sin red). */
+    private fun notifyUnavailable() {
+        if (!activity.isDestroyed && !activity.isFinishing) {
+            activity.runOnUiThread {
+                android.widget.Toast.makeText(
+                    activity,
+                    activity.getString(R.string.pro_purchase_unavailable),
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
             }
         }
     }

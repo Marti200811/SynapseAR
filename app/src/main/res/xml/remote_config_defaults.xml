@@ -20,6 +20,14 @@
         precio ancla tachado a partir del precio actual de Google, en la
         moneda local del usuario.
         Ejemplo: precio base $9.99, promo a $4.99 → poné 50.
+
+    promo_end_epoch_millis:
+        Timestamp UTC en milisegundos en que la promo expira automáticamente.
+        0 = sin fecha de fin (dura hasta apagar promo_active a mano).
+        Cuando la hora actual del dispositivo alcanza este valor, la app deja
+        de mostrar el precio tachado sola — no hay que acordarse de apagarla.
+        Ejemplo (promo de 60 días): poné el timestamp de (hoy + 60 días).
+        Podés calcularlo en https://www.epochconverter.com (en milisegundos).
 -->
 <defaultsMap>
     <entry>
@@ -32,6 +40,10 @@
     </entry>
     <entry>
         <key>promo_discount_percent</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>promo_end_epoch_millis</key>
         <value>0</value>
     </entry>
 </defaultsMap>

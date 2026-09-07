@@ -14,7 +14,7 @@ lifecycle = "2.8.7"
 coroutines = "1.9.0"
 secrets = "2.0.1"
 admob = "23.6.0"
-billing = "7.1.1"
+billing = "8.3.0"
 googleServices = "4.4.4"
 firebaseCrashlytics = "3.0.2"
 
