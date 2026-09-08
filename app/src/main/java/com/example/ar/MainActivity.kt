@@ -12,6 +12,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.ar.access.AccessManager
 import com.example.ar.access.Feature
+import com.example.ar.access.RewardedAdManager
 import com.example.ar.databinding.ActivityMainBinding
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val sharedVm: SharedViewModel by viewModels()
     lateinit var billingManager: BillingManager
+    lateinit var rewardedAdManager: RewardedAdManager
 
     private lateinit var consentInformation: ConsentInformation
     private var isMobileAdsInitialized = false
@@ -107,6 +109,8 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(binding.root, "🆓 FREE MODE activo (DEBUG_FORCE_FREE=true)", Snackbar.LENGTH_LONG).show()
         }
 
+        rewardedAdManager = RewardedAdManager(this)
+
         // ── Consentimiento UMP → inicializar AdMob ────────────────────────
         initAdsWithConsent()
     }
@@ -166,6 +170,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 if (sharedVm.isPro.value != true) {
                     binding.adBanner.loadAd(AdRequest.Builder().build())
+                    rewardedAdManager.preload()
                 }
             }
         }

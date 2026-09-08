@@ -6,4 +6,8 @@
     <!-- "Banner principal", creado el 2026-09-01 en la app ~5110678257.
          El anterior (/7302944941) pertenecía a la app duplicada ~1056694271. -->
     <string name="banner_ad_unit_id" translatable="false">ca-app-pub-5417760954645863/2320588681</string>
+
+    <!-- Unidad "Recompensado desbloqueo" de la app ~5110678257 (la verificada),
+         creada el 2026-09-08. -->
+    <string name="rewarded_ad_unit_id" translatable="false">ca-app-pub-5417760954645863/1848125012</string>
 </resources>
