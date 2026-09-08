@@ -16,8 +16,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ar.Analytics
 import com.example.ar.MainActivity
-import com.example.ar.ProManager
 import com.example.ar.R
+import com.example.ar.access.AccessManager
+import com.example.ar.access.Feature
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -37,7 +38,10 @@ class SatellitePickerDialog(
         val etSearch = view.findViewById<EditText>(R.id.etSatSearch)
         val rv       = view.findViewById<RecyclerView>(R.id.rvSatellites)
 
-        val isPro = ProManager.isPro(requireContext())
+        // Vale tanto para el candado visual como para el gate de selección.
+        // Se llama una vez acá a propósito: si se consultara por fila, el estado
+        // podría cambiar a mitad del scroll.
+        val hasAccess = AccessManager.canUse(requireContext(), Feature.SATELLITE)
 
         // Calcular elevaciones si hay ubicación disponible
         val elevationMap: Map<String, Double> = if (location != null) {
@@ -54,9 +58,9 @@ class SatellitePickerDialog(
                 .thenByDescending { elevationMap[it.name] ?: -90.0 }
         )
 
-        val adapter = SatelliteAdapter(sorted, isPro, elevationMap) { satellite ->
+        val adapter = SatelliteAdapter(sorted, hasAccess, elevationMap) { satellite ->
             val isFree = SatelliteDatabase.freeSatelliteNames.contains(satellite.name)
-            if (isPro || isFree) {
+            if (hasAccess || isFree) {
                 onSelected(satellite)
                 dismiss()
             } else {

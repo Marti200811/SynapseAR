@@ -10,6 +10,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.example.ar.access.AccessManager
+import com.example.ar.access.Feature
 import com.example.ar.databinding.ActivityMainBinding
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
@@ -74,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         // también el toggle DEBUG_FORCE_FREE en builds de desarrollo.
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (destination.id == R.id.arFragment
-                && sharedVm.isPro.value != true) {
+                && !AccessManager.canUse(this, Feature.AR)) {
                 navController.popBackStack()
                 showUpgradeDialog(Analytics.SRC_AR_TAB)
             }

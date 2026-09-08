@@ -31,8 +31,9 @@ import com.example.ar.Analytics
 import com.example.ar.CalibrationDialog
 import com.example.ar.CompassTheme
 import com.example.ar.MainActivity
-import com.example.ar.ProManager
 import com.example.ar.ProximityBeeper
+import com.example.ar.access.AccessManager
+import com.example.ar.access.Feature
 import com.example.ar.R
 import com.example.ar.SettingsDialog
 import com.example.ar.SharedViewModel
@@ -117,14 +118,14 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             val acc = orientation.calibrationAccuracy
             if (acc <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
                 CalibrationDialog().show(parentFragmentManager, "calib")
-            } else if (ProManager.isPro(requireContext())) {
+            } else if (AccessManager.canUse(requireContext(), Feature.COMPASS_THEMES)) {
                 showThemePicker()
             }
         }
 
         // Long press en brújula → selector de tema (Pro)
         binding.compass.setOnLongClickListener {
-            if (ProManager.isPro(requireContext())) {
+            if (AccessManager.canUse(requireContext(), Feature.COMPASS_THEMES)) {
                 showThemePicker()
             } else {
                 (requireActivity() as MainActivity)
@@ -148,7 +149,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             val type = sharedVm.antennaType.value ?: AntennaType.SATELLITE
             when (sharedVm.antennaType.value) {
                 AntennaType.WIFI_DIRECTIONAL -> {
-                    if (ProManager.isPro(requireContext())) {
+                    if (AccessManager.canUse(requireContext(), Feature.WIFI_SCANNER)) {
                         WifiScannerDialog { network ->
                             sharedVm.trackedWifi.value = network
                         }.show(parentFragmentManager, "wifi_scanner")
@@ -158,7 +159,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                     }
                 }
                 AntennaType.TDT -> {
-                    if (ProManager.isPro(requireContext())) {
+                    if (AccessManager.canUse(requireContext(), Feature.TDT_PICKER)) {
                         // Pasar código de país para filtrar por país del usuario
                         TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
                             sharedVm.selectedTdt.value = transmitter
