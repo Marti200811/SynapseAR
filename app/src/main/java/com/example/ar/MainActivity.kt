@@ -175,6 +175,8 @@ class MainActivity : AppCompatActivity() {
         MobileAds.initialize(this) {
             // M01: el callback puede llegar desde un background thread — postear a UI
             runOnUiThread {
+                // Recién ahora UpgradeDialog puede reintentar la precarga por su cuenta
+                rewardedAdManager.adsInitialized = true
                 if (sharedVm.isPro.value != true) {
                     binding.adBanner.loadAd(AdRequest.Builder().build())
                     rewardedAdManager.preload()
