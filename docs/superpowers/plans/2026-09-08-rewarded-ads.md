@@ -110,6 +110,12 @@ El corazón de la decisión, sin nada de Android para que se pueda testear de ve
 - Create: `app/src/main/java/com/example/ar/access/Feature.kt`
 - Create: `app/src/main/java/com/example/ar/access/AccessRules.kt`
 - Test: `app/src/test/java/com/example/ar/access/AccessRulesTest.kt`
+- Delete: `app/src/test/java/com/example/ar/SanityTest.kt`
+
+> **Nota:** `SanityTest` existe solo para probar, en la Task 1, que la infraestructura de tests
+> quedó funcionando. No prueba nada del producto, así que se borra en esta tarea, una vez que
+> los 8 tests de `AccessRulesTest` cumplen ese rol. Decisión tomada con el usuario antes de
+> empezar la ejecución.
 
 **Interfaces:**
 - Consumes: nada
@@ -245,10 +251,21 @@ object AccessRules {
 
 Esperado: `BUILD SUCCESSFUL`, 8 tests pasan.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Borrar el test de sanidad**
+
+Ya cumplió su función: la infraestructura quedó probada y ahora hay 8 tests reales.
 
 ```bash
-git add app/src/main/java/com/example/ar/access app/src/test/java/com/example/ar/access
+rm app/src/test/java/com/example/ar/SanityTest.kt
+./gradlew testDebugUnitTest
+```
+
+Esperado: `BUILD SUCCESSFUL`, los 8 tests de `AccessRulesTest` siguen pasando.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app/src/main/java/com/example/ar/access app/src/test/java/com/example/ar
 git commit -m "feat: agregar Feature y AccessRules, la logica pura de acceso"
 ```
 
