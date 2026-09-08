@@ -9,6 +9,9 @@ import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import com.example.ar.access.AccessManager
+import com.example.ar.access.Feature
+import com.example.ar.access.RewardedAdManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -19,6 +22,15 @@ class UpgradeDialog : DialogFragment() {
 
     /** Función bloqueada que trajo al usuario acá — se registra en Analytics. */
     var source: String = "unknown"
+
+    /** Manager de anuncios recompensados. Si es null, no se ofrece la opción. */
+    var rewardedAdManager: RewardedAdManager? = null
+
+    /** Función que se desbloquea si el usuario gana la recompensa. */
+    var feature: Feature? = null
+
+    /** Se invoca tras ganar la recompensa, para ejecutar la acción que estaba bloqueada. */
+    var onRewardEarned: (() -> Unit)? = null
 
     private var btnBuy: MaterialButton? = null
 
@@ -33,6 +45,41 @@ class UpgradeDialog : DialogFragment() {
                 Analytics.upgradeButtonTapped(requireContext(), source)
                 billingManager?.launchPurchase()
                 dismiss()
+            }
+        }
+
+        val ads = rewardedAdManager
+        val feat = feature
+        val btnAd = view.findViewById<MaterialButton>(R.id.btnWatchAd)
+
+        // Si no hay anuncio listo, se intenta cargar uno para la próxima vez que
+        // se abra el diálogo. Sin esto, si la precarga inicial falló (sin red al
+        // arrancar, por ejemplo), la opción no volvería a aparecer nunca.
+        if (ads != null && !ads.isAdReady()) ads.preload()
+
+        // Solo se ofrece si HAY un anuncio cargado ahora. Nunca se muestra un botón
+        // deshabilitado con "Cargando…": ese fue un bug real en el proyecto hermano
+        // Oráculo, donde el usuario veía un botón muerto sin saber por qué.
+        if (ads != null && feat != null && ads.isAdReady()) {
+            btnAd.visibility = android.view.View.VISIBLE
+            Analytics.rewardedOffered(requireContext(), source)
+            btnAd.setOnClickListener {
+                Analytics.rewardedStarted(requireContext(), source)
+                ads.show(
+                    onEarned = {
+                        AccessManager.grantTemporary(requireContext(), feat)
+                        Analytics.rewardedEarned(requireContext(), source)
+                        onRewardEarned?.invoke()
+                        dismiss()
+                    },
+                    onFailed = {
+                        android.widget.Toast.makeText(
+                            requireContext(),
+                            getString(R.string.rewarded_failed),
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                )
             }
         }
 

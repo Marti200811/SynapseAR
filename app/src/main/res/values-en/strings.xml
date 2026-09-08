@@ -72,6 +72,8 @@
     <string name="upgrade_btn_restore">Restore previous purchase</string>
     <string name="upgrade_btn_later">Maybe later</string>
     <string name="upgrade_trial_note">One-time payment. No subscription or recurring charges.</string>
+    <string name="upgrade_btn_watch_ad">▶ Watch an ad and use it free for 30 min</string>
+    <string name="rewarded_failed">Couldn\'t load the ad. Try again in a moment.</string>
     <string name="pro_purchase_unavailable">Purchase is not available right now. Check your connection and try again later.</string>
 
     <!-- Settings -->

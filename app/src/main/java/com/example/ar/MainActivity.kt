@@ -180,13 +180,21 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * @param source cuál de las funciones bloqueadas trajo al usuario acá.
-     *        Se registra en Analytics para saber qué función vende (ver [Analytics]).
+     * @param feature qué se desbloquea si mira un anuncio. Null = no se ofrece anuncio.
+     * @param onUnlocked qué ejecutar si gana la recompensa.
      */
-    fun showUpgradeDialog(source: String) {
+    fun showUpgradeDialog(
+        source: String,
+        feature: Feature? = null,
+        onUnlocked: (() -> Unit)? = null
+    ) {
         Analytics.upgradeDialogShown(this, source)
         val dialog = UpgradeDialog()
         dialog.billingManager = billingManager
         dialog.source = source
+        dialog.rewardedAdManager = rewardedAdManager
+        dialog.feature = feature
+        dialog.onRewardEarned = onUnlocked
         dialog.show(supportFragmentManager, "upgrade")
     }
 

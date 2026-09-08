@@ -41,4 +41,16 @@ object Analytics {
     /** El usuario apretó comprar. ESTA es la métrica de demanda real. */
     fun upgradeButtonTapped(context: Context, source: String) =
         log(context, "upgrade_button_tapped", source)
+
+    /** Al usuario se le ofreció la opción de mirar un anuncio (había uno cargado). */
+    fun rewardedOffered(context: Context, source: String) =
+        log(context, "rewarded_offered", source)
+
+    /** Tocó "Ver un anuncio". */
+    fun rewardedStarted(context: Context, source: String) =
+        log(context, "rewarded_started", source)
+
+    /** Completó el anuncio y ganó el desbloqueo. */
+    fun rewardedEarned(context: Context, source: String) =
+        log(context, "rewarded_earned", source)
 }

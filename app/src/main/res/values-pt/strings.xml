@@ -72,6 +72,8 @@
     <string name="upgrade_btn_restore">Restaurar compra anterior</string>
     <string name="upgrade_btn_later">Talvez depois</string>
     <string name="upgrade_trial_note">Pagamento único. Sem assinatura nem cobranças recorrentes.</string>
+    <string name="upgrade_btn_watch_ad">▶ Ver um anúncio e usar 30 min grátis</string>
+    <string name="rewarded_failed">Não foi possível carregar o anúncio. Tente novamente em instantes.</string>
     <string name="pro_purchase_unavailable">A compra não está disponível no momento. Verifique sua conexão e tente novamente mais tarde.</string>
 
     <!-- Settings -->
