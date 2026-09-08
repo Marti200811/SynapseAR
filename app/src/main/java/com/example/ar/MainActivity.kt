@@ -73,21 +73,6 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.menu.findItem(R.id.arFragment)?.icon =
             androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_nav_ar)
 
-        // Bloquear tab AR si no tiene acceso.
-        // AccessManager resuelve "es Pro O tiene un desbloqueo temporal vigente",
-        // y ProManager sigue respetando el toggle DEBUG_FORCE_FREE en builds de desarrollo.
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            if (destination.id == R.id.arFragment
-                && !AccessManager.canUse(this, Feature.AR)) {
-                navController.popBackStack()
-                showUpgradeDialog(
-                    source = Analytics.SRC_AR_TAB,
-                    feature = Feature.AR,
-                    onUnlocked = { navController.navigate(R.id.arFragment) }
-                )
-            }
-        }
-
         // Billing: en release actualiza el estado Pro desde Google Play.
         // En debug, ProManager.isPro() ya maneja DEBUG_FORCE_FREE → no pisamos.
         billingManager = BillingManager(this) { isPro ->
@@ -114,6 +99,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         rewardedAdManager = RewardedAdManager(this)
+
+        // Bloquear tab AR si no tiene acceso.
+        // AccessManager resuelve "es Pro O tiene un desbloqueo temporal vigente",
+        // y ProManager sigue respetando el toggle DEBUG_FORCE_FREE en builds de desarrollo.
+        // OJO: este listener despacha el destino actual apenas se registra, y
+        // showUpgradeDialog() usa billingManager y rewardedAdManager. Tiene que
+        // quedar DESPUÉS de que ambos estén inicializados.
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.arFragment
+                && !AccessManager.canUse(this, Feature.AR)) {
+                navController.popBackStack()
+                showUpgradeDialog(
+                    source = Analytics.SRC_AR_TAB,
+                    feature = Feature.AR,
+                    onUnlocked = { navController.navigate(R.id.arFragment) }
+                )
+            }
+        }
 
         // ── Consentimiento UMP → inicializar AdMob ────────────────────────
         initAdsWithConsent()

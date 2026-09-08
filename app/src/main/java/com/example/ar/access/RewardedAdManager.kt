@@ -46,10 +46,19 @@ class RewardedAdManager(private val activity: Activity) {
     }
 
     /**
-     * Muestra el anuncio. [onEarned] se invoca SOLO si el usuario lo completó y
-     * ganó la recompensa; si lo cierra antes, se invoca [onFailed].
+     * Muestra el anuncio.
+     *
+     * Los tres callbacks corren SIEMPRE con el anuncio ya cerrado, nunca encima de él:
+     * Google pide que la navegación y las transacciones de fragmento se hagan en
+     * onAdDismissedFullScreenContent, no en onUserEarnedReward. Con la AdActivity
+     * translúcida de AdMob hoy funcionaría igual, pero con mediación de terceros
+     * (activities opacas) un commit() desde ahí tira IllegalStateException.
+     *
+     * @param onEarned    completó el anuncio y ganó la recompensa
+     * @param onCancelled lo cerró antes de completarlo — no es un error, no avisar como tal
+     * @param onFailed    no se pudo mostrar (sin anuncio cargado o error del SDK)
      */
-    fun show(onEarned: () -> Unit, onFailed: () -> Unit) {
+    fun show(onEarned: () -> Unit, onCancelled: () -> Unit, onFailed: () -> Unit) {
         val ad = rewardedAd
         if (ad == null) {
             onFailed()
@@ -62,7 +71,7 @@ class RewardedAdManager(private val activity: Activity) {
             override fun onAdDismissedFullScreenContent() {
                 rewardedAd = null
                 preload()                       // dejar listo el siguiente
-                if (!earned) onFailed()
+                if (earned) onEarned() else onCancelled()
             }
             override fun onAdFailedToShowFullScreenContent(error: AdError) {
                 rewardedAd = null
@@ -72,8 +81,8 @@ class RewardedAdManager(private val activity: Activity) {
         }
 
         ad.show(activity) {
+            // Solo marcar. El trabajo real se hace al cerrarse el anuncio.
             earned = true
-            onEarned()
         }
     }
 }

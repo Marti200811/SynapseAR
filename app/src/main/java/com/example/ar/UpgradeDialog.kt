@@ -79,6 +79,10 @@ class UpgradeDialog : DialogFragment() {
                             dismiss()
                         }
                     },
+                    onCancelled = {
+                        // Cerró el anuncio a propósito. No es un error: el diálogo
+                        // queda abierto con la opción de comprar Pro. Sin Toast.
+                    },
                     onFailed = {
                         if (isAdded) {
                             android.widget.Toast.makeText(
