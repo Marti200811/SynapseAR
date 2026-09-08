@@ -17,6 +17,7 @@ admob = "23.6.0"
 billing = "8.3.0"
 googleServices = "4.4.4"
 firebaseCrashlytics = "3.0.2"
+junit = "4.13.2"
 
 [libraries]
 androidx-core-ktx                = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -36,6 +37,7 @@ androidx-lifecycle-runtime-ktx   = { module = "androidx.lifecycle:lifecycle-runt
 kotlinx-coroutines-android       = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 admob                            = { module = "com.google.android.gms:play-services-ads", version.ref = "admob" }
 billing                          = { module = "com.android.billingclient:billing-ktx",    version.ref = "billing" }
+junit                            = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]
 android-application       = { id = "com.android.application", version.ref = "agp" }
