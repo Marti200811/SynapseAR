@@ -128,8 +128,11 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             if (AccessManager.canUse(requireContext(), Feature.COMPASS_THEMES)) {
                 showThemePicker()
             } else {
-                (requireActivity() as MainActivity)
-                    .showUpgradeDialog(Analytics.SRC_COMPASS_THEME)
+                (requireActivity() as MainActivity).showUpgradeDialog(
+                    source = Analytics.SRC_COMPASS_THEME,
+                    feature = Feature.COMPASS_THEMES,
+                    onUnlocked = { showThemePicker() }
+                )
             }
             true
         }
@@ -154,8 +157,15 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                             sharedVm.trackedWifi.value = network
                         }.show(parentFragmentManager, "wifi_scanner")
                     } else {
-                        (requireActivity() as MainActivity)
-                            .showUpgradeDialog(Analytics.SRC_WIFI_SCANNER)
+                        (requireActivity() as MainActivity).showUpgradeDialog(
+                            source = Analytics.SRC_WIFI_SCANNER,
+                            feature = Feature.WIFI_SCANNER,
+                            onUnlocked = {
+                                WifiScannerDialog { network ->
+                                    sharedVm.trackedWifi.value = network
+                                }.show(parentFragmentManager, "wifi_scanner")
+                            }
+                        )
                     }
                 }
                 AntennaType.TDT -> {
@@ -165,8 +175,15 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                             sharedVm.selectedTdt.value = transmitter
                         }.show(parentFragmentManager, "tdt_picker")
                     } else {
-                        (requireActivity() as MainActivity)
-                            .showUpgradeDialog(Analytics.SRC_TDT_PICKER)
+                        (requireActivity() as MainActivity).showUpgradeDialog(
+                            source = Analytics.SRC_TDT_PICKER,
+                            feature = Feature.TDT_PICKER,
+                            onUnlocked = {
+                                TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
+                                    sharedVm.selectedTdt.value = transmitter
+                                }.show(parentFragmentManager, "tdt_picker")
+                            }
+                        )
                     }
                 }
                 else -> {

@@ -64,8 +64,14 @@ class SatellitePickerDialog(
                 onSelected(satellite)
                 dismiss()
             } else {
-                (requireActivity() as MainActivity)
-                    .showUpgradeDialog(Analytics.SRC_SATELLITE_LOCKED)
+                (requireActivity() as MainActivity).showUpgradeDialog(
+                    source = Analytics.SRC_SATELLITE_LOCKED,
+                    feature = Feature.SATELLITE,
+                    onUnlocked = {
+                        onSelected(satellite)
+                        dismiss()
+                    }
+                )
             }
         }
 

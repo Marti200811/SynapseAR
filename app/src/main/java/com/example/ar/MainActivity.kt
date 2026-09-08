@@ -80,7 +80,11 @@ class MainActivity : AppCompatActivity() {
             if (destination.id == R.id.arFragment
                 && !AccessManager.canUse(this, Feature.AR)) {
                 navController.popBackStack()
-                showUpgradeDialog(Analytics.SRC_AR_TAB)
+                showUpgradeDialog(
+                    source = Analytics.SRC_AR_TAB,
+                    feature = Feature.AR,
+                    onUnlocked = { navController.navigate(R.id.arFragment) }
+                )
             }
         }
 
