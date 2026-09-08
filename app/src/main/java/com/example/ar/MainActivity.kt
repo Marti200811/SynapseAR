@@ -71,9 +71,9 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.menu.findItem(R.id.arFragment)?.icon =
             androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_nav_ar)
 
-        // Bloquear tab AR si no es Pro.
-        // Usa sharedVm.isPro como única fuente de verdad: así respeta
-        // también el toggle DEBUG_FORCE_FREE en builds de desarrollo.
+        // Bloquear tab AR si no tiene acceso.
+        // AccessManager resuelve "es Pro O tiene un desbloqueo temporal vigente",
+        // y ProManager sigue respetando el toggle DEBUG_FORCE_FREE en builds de desarrollo.
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (destination.id == R.id.arFragment
                 && !AccessManager.canUse(this, Feature.AR)) {
