@@ -64,20 +64,29 @@ class UpgradeDialog : DialogFragment() {
             btnAd.visibility = android.view.View.VISIBLE
             Analytics.rewardedOffered(requireContext(), source)
             btnAd.setOnClickListener {
-                Analytics.rewardedStarted(requireContext(), source)
+                // El applicationContext sobrevive al fragment: si este muere mientras
+                // corre el anuncio, la recompensa igual se otorga. Sería injusto que
+                // el usuario mire el anuncio completo y no reciba el desbloqueo.
+                val appCtx = requireContext().applicationContext
+                Analytics.rewardedStarted(appCtx, source)
                 ads.show(
                     onEarned = {
-                        AccessManager.grantTemporary(requireContext(), feat)
-                        Analytics.rewardedEarned(requireContext(), source)
-                        onRewardEarned?.invoke()
-                        dismiss()
+                        AccessManager.grantTemporary(appCtx, feat)
+                        Analytics.rewardedEarned(appCtx, source)
+                        // La UI sí depende de que el fragment siga vivo.
+                        if (isAdded) {
+                            onRewardEarned?.invoke()
+                            dismiss()
+                        }
                     },
                     onFailed = {
-                        android.widget.Toast.makeText(
-                            requireContext(),
-                            getString(R.string.rewarded_failed),
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                        if (isAdded) {
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                getString(R.string.rewarded_failed),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 )
             }

@@ -131,7 +131,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 (requireActivity() as MainActivity).showUpgradeDialog(
                     source = Analytics.SRC_COMPASS_THEME,
                     feature = Feature.COMPASS_THEMES,
-                    onUnlocked = { showThemePicker() }
+                    onUnlocked = { if (isAdded) showThemePicker() }
                 )
             }
             true
@@ -161,9 +161,11 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                             source = Analytics.SRC_WIFI_SCANNER,
                             feature = Feature.WIFI_SCANNER,
                             onUnlocked = {
-                                WifiScannerDialog { network ->
-                                    sharedVm.trackedWifi.value = network
-                                }.show(parentFragmentManager, "wifi_scanner")
+                                if (isAdded) {
+                                    WifiScannerDialog { network ->
+                                        sharedVm.trackedWifi.value = network
+                                    }.show(parentFragmentManager, "wifi_scanner")
+                                }
                             }
                         )
                     }
@@ -179,9 +181,11 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                             source = Analytics.SRC_TDT_PICKER,
                             feature = Feature.TDT_PICKER,
                             onUnlocked = {
-                                TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
-                                    sharedVm.selectedTdt.value = transmitter
-                                }.show(parentFragmentManager, "tdt_picker")
+                                if (isAdded) {
+                                    TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
+                                        sharedVm.selectedTdt.value = transmitter
+                                    }.show(parentFragmentManager, "tdt_picker")
+                                }
                             }
                         )
                     }

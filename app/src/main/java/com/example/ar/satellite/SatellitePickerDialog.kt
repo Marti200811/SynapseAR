@@ -68,8 +68,10 @@ class SatellitePickerDialog(
                     source = Analytics.SRC_SATELLITE_LOCKED,
                     feature = Feature.SATELLITE,
                     onUnlocked = {
-                        onSelected(satellite)
-                        dismiss()
+                        if (isAdded) {
+                            onSelected(satellite)
+                            dismiss()
+                        }
                     }
                 )
             }
