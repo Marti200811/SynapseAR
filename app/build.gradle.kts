@@ -31,7 +31,7 @@ android {
         applicationId = "com.quantixlabs.synapsear"
         minSdk = 26
         targetSdk = 36
-        versionCode = 15
+        versionCode = 16
         versionName = "1.2.0"
     }
 
