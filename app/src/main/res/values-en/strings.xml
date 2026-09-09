@@ -60,7 +60,8 @@
     <string name="feet_short">ft</string>
 
     <!-- Upgrade / Pro -->
-    <string name="upgrade_title">Synapse AR Pro</string>
+    <!-- Debe coincidir con app_name: en inglés la app es "Antenna AR", con doble N -->
+    <string name="upgrade_title">Antenna AR Pro</string>
     <string name="upgrade_subtitle">Unlock all professional features</string>
     <string name="upgrade_feature_satellites">📡  Full satellite database (~35)</string>
     <string name="upgrade_feature_wifi">📶  Real-time WiFi scanner</string>

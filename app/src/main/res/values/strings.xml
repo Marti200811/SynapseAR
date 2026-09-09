@@ -60,7 +60,8 @@
     <string name="feet_short">ft</string>
 
     <!-- Upgrade / Pro -->
-    <string name="upgrade_title">Synapse AR Pro</string>
+    <!-- Tiene que coincidir con app_name: la app se renombró a "Antena AR" en la v14 -->
+    <string name="upgrade_title">Antena AR Pro</string>
     <string name="upgrade_subtitle">Desbloqueá todas las funciones profesionales</string>
     <string name="upgrade_feature_satellites">📡  Base completa de satélites (~35)</string>
     <string name="upgrade_feature_wifi">📶  Escáner WiFi en tiempo real</string>

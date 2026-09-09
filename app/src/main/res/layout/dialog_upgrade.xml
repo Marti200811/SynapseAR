@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<!--
+    El ScrollView no es decorativo: el contenido mide ~570dp y con el botón de anuncio
+    visible más una escala de fuente grande (el público de la app son instaladores y gente
+    mayor) los últimos elementos — "Restaurar compra" y "Tal vez después" — quedaban fuera
+    de pantalla, sin manera de cerrar el diálogo salvo tocando afuera.
+-->
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:background="@color/bg_deep">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
     <!-- Header -->
     <LinearLayout
@@ -157,3 +167,5 @@
     </LinearLayout>
 
 </LinearLayout>
+
+</ScrollView>
