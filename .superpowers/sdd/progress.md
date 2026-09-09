@@ -115,6 +115,46 @@ compila por falta de dependencias).
 Verificación tras los fixes: `compileDebugKotlin`, `compileReleaseKotlin` y `testDebugUnitTest`
 en `BUILD SUCCESSFUL`, 8/8 de `AccessRulesTest` con `--rerun-tasks`.
 
+## Verificación de los arreglos post-revisión (2026-09-08/09)
+
+Los commits `d61f675` y `1b4a46a` se hicieron **después** de la revisión final, así que nadie
+los había revisado y estaban por entrar a master. Se les corrió una verificación adversarial
+aparte (5 lentes + refutadores). **Encontró que el arreglo de I-3 había introducido dos
+regresiones propias.** Ambas corregidas en `ec29d4e`:
+
+- **La recompensa dejó de ser durable.** Al mover el trabajo de `onUserEarnedReward` a
+  `onAdDismissedFullScreenContent`, `grantTemporary()` pasó a correr recién al cerrarse el
+  anuncio. Si el sistema mata el proceso mientras está el end card — un Moto G15 con la app
+  en background lo hace — el dismissal nunca llega, el flag `earned` muere en memoria y nada
+  se escribe en `synapse_prefs`. El usuario mira el anuncio entero, AdMob ya contabilizó la
+  impresión y la recompensa, y él se queda sin los 30 minutos. Es exactamente lo que el
+  comentario original del `applicationContext` protegía.
+- **Doble toque rompía el anuncio en curso.** `rewardedAd` no se anulaba antes de `ad.show()`,
+  así que un segundo toque tomaba el mismo objeto, reasignaba `fullScreenContentCallback` a
+  otro closure con su propio `earned = false`, y el `show()` duplicado disparaba
+  `onAdFailedToShowFullScreenContent` → Toast de error encima del video que el usuario estaba
+  mirando.
+
+**Diseño corregido (`ec29d4e`):** `show()` pasó a 4 callbacks porque son dos momentos distintos
+y mezclarlos es justamente lo que falló:
+
+| Callback | Cuándo | Qué va acá |
+|---|---|---|
+| `onRewardEarned` | `onUserEarnedReward`, anuncio en pantalla | **Persistir.** Nada de UI |
+| `onClosedAfterReward` | dismissal, habiendo ganado | La UI (navegar, `dismiss()`) |
+| `onClosedWithoutReward` | dismissal, sin ganar | Nada — no es un error |
+| `onFailedToShow` | no se pudo mostrar | El Toast |
+
+Más un guard `showing` y `rewardedAd = null` antes de `ad.show()` para el doble toque.
+
+Así se cumplen las dos restricciones a la vez: la recompensa se persiste en el instante más
+temprano posible (sobrevive a que muera el proceso) y la UI corre recién con el anuncio
+cerrado (no rompe si algún día se activa mediación).
+
+> ⚠️ **Lección de proceso:** los arreglos que salen *después* de la revisión final no están
+> revisados. Este los tuvo que verificar aparte y aparecieron dos regresiones importantes.
+> No mergear arreglos post-revisión sin pasarlos por el mismo filtro.
+
 ## Pendiente antes de publicar (NO bloquea el merge)
 
 1. **`versionCode` sigue en 14, que ya está publicado.** Hay que subirlo a 15.
