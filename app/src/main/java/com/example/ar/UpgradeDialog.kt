@@ -70,20 +70,24 @@ class UpgradeDialog : DialogFragment() {
                 val appCtx = requireContext().applicationContext
                 Analytics.rewardedStarted(appCtx, source)
                 ads.show(
-                    onEarned = {
+                    onRewardEarned = {
+                        // Corre con el anuncio todavía en pantalla, a propósito: si el
+                        // sistema mata el proceso en el end card, esto ya quedó escrito.
                         AccessManager.grantTemporary(appCtx, feat)
                         Analytics.rewardedEarned(appCtx, source)
+                    },
+                    onClosedAfterReward = {
                         // La UI sí depende de que el fragment siga vivo.
                         if (isAdded) {
                             onRewardEarned?.invoke()
                             dismiss()
                         }
                     },
-                    onCancelled = {
+                    onClosedWithoutReward = {
                         // Cerró el anuncio a propósito. No es un error: el diálogo
                         // queda abierto con la opción de comprar Pro. Sin Toast.
                     },
-                    onFailed = {
+                    onFailedToShow = {
                         if (isAdded) {
                             android.widget.Toast.makeText(
                                 requireContext(),

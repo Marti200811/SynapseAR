@@ -57,44 +57,69 @@ class RewardedAdManager(private val activity: Activity) {
         )
     }
 
+    /** Hay un anuncio presentándose ahora mismo. Evita que un segundo toque lo pise. */
+    private var showing = false
+
     /**
      * Muestra el anuncio.
      *
-     * Los tres callbacks corren SIEMPRE con el anuncio ya cerrado, nunca encima de él:
-     * Google pide que la navegación y las transacciones de fragmento se hagan en
-     * onAdDismissedFullScreenContent, no en onUserEarnedReward. Con la AdActivity
-     * translúcida de AdMob hoy funcionaría igual, pero con mediación de terceros
-     * (activities opacas) un commit() desde ahí tira IllegalStateException.
+     * Hay DOS momentos distintos y no se pueden mezclar, cada uno tiene su callback:
      *
-     * @param onEarned    completó el anuncio y ganó la recompensa
-     * @param onCancelled lo cerró antes de completarlo — no es un error, no avisar como tal
-     * @param onFailed    no se pudo mostrar (sin anuncio cargado o error del SDK)
+     * 1. **Cuando gana** ([onRewardEarned]) — el anuncio sigue en pantalla. Acá va lo que
+     *    tiene que quedar guardado sí o sí. Si el usuario mira el anuncio entero y después
+     *    el sistema mata el proceso mientras está el end card, el dismissal nunca llega:
+     *    lo que no se persistió en este momento se pierde, y el usuario se queda sin la
+     *    recompensa que AdMob ya le contabilizó. **Nada de UI acá.**
+     * 2. **Cuando se cierra** ([onClosedAfterReward] / [onClosedWithoutReward]) — recién
+     *    acá se puede navegar o tocar fragments. Google pide que las transacciones vayan
+     *    en onAdDismissedFullScreenContent; hoy funcionaría igual porque la AdActivity de
+     *    AdMob es translúcida, pero con mediación de terceros (activities opacas) un
+     *    commit() desde el momento 1 tira IllegalStateException.
+     *
+     * @param onRewardEarned        ganó — persistir acá, sin UI
+     * @param onClosedAfterReward   cerró el anuncio habiéndolo completado — la UI va acá
+     * @param onClosedWithoutReward lo cerró antes de terminar — no es un error, no avisar
+     * @param onFailedToShow        no se pudo mostrar (sin anuncio cargado o error del SDK)
      */
-    fun show(onEarned: () -> Unit, onCancelled: () -> Unit, onFailed: () -> Unit) {
+    fun show(
+        onRewardEarned: () -> Unit,
+        onClosedAfterReward: () -> Unit,
+        onClosedWithoutReward: () -> Unit,
+        onFailedToShow: () -> Unit
+    ) {
+        // Segundo toque mientras ya hay uno abriéndose: ignorar en silencio. Sin esto,
+        // reasignaría fullScreenContentCallback sobre el mismo anuncio y el usuario vería
+        // un Toast de error encima del video que está mirando.
+        if (showing) return
+
         val ad = rewardedAd
         if (ad == null) {
-            onFailed()
+            onFailedToShow()
             return
         }
+
+        // Este anuncio ya se consumió: soltarlo antes de mostrarlo, no después.
+        rewardedAd = null
+        showing = true
 
         var earned = false
 
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
-                rewardedAd = null
+                showing = false
                 preload()                       // dejar listo el siguiente
-                if (earned) onEarned() else onCancelled()
+                if (earned) onClosedAfterReward() else onClosedWithoutReward()
             }
             override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                rewardedAd = null
+                showing = false
                 preload()
-                onFailed()
+                onFailedToShow()
             }
         }
 
         ad.show(activity) {
-            // Solo marcar. El trabajo real se hace al cerrarse el anuncio.
             earned = true
+            onRewardEarned()                    // persistir YA, no esperar al cierre
         }
     }
 }
