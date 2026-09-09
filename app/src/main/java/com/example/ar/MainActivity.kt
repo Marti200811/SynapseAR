@@ -100,6 +100,11 @@ class MainActivity : AppCompatActivity() {
 
         rewardedAdManager = RewardedAdManager(this)
 
+        // Nueva sesión: habilita que se vuelva a contar una alineación exitosa.
+        // Sin esto, el contador de la sesión anterior quedaría marcado y no se
+        // registraría ningún éxito nuevo nunca más.
+        RatingPrompt.resetSession(this)
+
         // Bloquear tab AR si no tiene acceso.
         // AccessManager resuelve "es Pro O tiene un desbloqueo temporal vigente",
         // y ProManager sigue respetando el toggle DEBUG_FORCE_FREE en builds de desarrollo.
@@ -215,6 +220,13 @@ class MainActivity : AppCompatActivity() {
         binding.adBanner.resume()
         // Chequea updates cada vez que la app vuelve al frente
         updateManager.checkForUpdates()
+
+        // Pide calificación si el usuario ya alineó antenas con éxito varias veces.
+        // Con retraso a propósito: si hay una actualización forzada, que se lleve
+        // ella la pantalla primero y no se apilen dos diálogos.
+        binding.root.postDelayed({
+            if (!isFinishing && !isDestroyed) RatingPrompt.maybeAsk(this)
+        }, 2_500L)
     }
     override fun onDestroy() {
         super.onDestroy()

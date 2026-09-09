@@ -32,6 +32,7 @@ import com.example.ar.CalibrationDialog
 import com.example.ar.CompassTheme
 import com.example.ar.MainActivity
 import com.example.ar.ProximityBeeper
+import com.example.ar.RatingPrompt
 import com.example.ar.access.AccessManager
 import com.example.ar.access.Feature
 import com.example.ar.R
@@ -433,7 +434,12 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         var diff = abs(lastAzimuth.toDouble() - lastTargetBearing)
         if (diff > 180.0) diff = 360.0 - diff
         val aligned = diff < precision
-        if (aligned && !wasCompassAligned) vibrateOnLock()
+        if (aligned && !wasCompassAligned) {
+            vibrateOnLock()
+            // Solo registra el éxito. La calificación se pide en la apertura
+            // siguiente, no acá: el usuario está apuntando una antena.
+            context?.let { RatingPrompt.recordSuccess(it) }
+        }
         wasCompassAligned = aligned
     }
 

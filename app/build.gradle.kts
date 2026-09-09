@@ -115,6 +115,10 @@ dependencies {
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.android.play:app-update-ktx:2.1.0")
 
+    // Google Play In-App Review (pedido de calificación) — ver RatingPrompt.kt
+    implementation("com.google.android.play:review:2.0.2")
+    implementation("com.google.android.play:review-ktx:2.0.2")
+
     // Tests unitarios locales (corren en la JVM, sin dispositivo)
     testImplementation(libs.junit)
 }

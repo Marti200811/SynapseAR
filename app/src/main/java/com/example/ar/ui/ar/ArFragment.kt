@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.example.ar.ProximityBeeper
 import com.example.ar.R
+import com.example.ar.RatingPrompt
 import com.example.ar.SharedViewModel
 import com.example.ar.databinding.FragmentArBinding
 import com.example.ar.satellite.SatelliteCalculator
@@ -288,7 +289,12 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         sharedVm.isAligned.postValue(aligned)
 
         // Vibrar solo en el momento que pasa de no-alineado → alineado
-        if (aligned && !wasAligned) vibrateOnLock()
+        if (aligned && !wasAligned) {
+            vibrateOnLock()
+            // Solo registra el éxito. La calificación se pide en la apertura
+            // siguiente, no acá: el usuario está apuntando una antena.
+            context?.let { RatingPrompt.recordSuccess(it) }
+        }
         wasAligned = aligned
     }
 
