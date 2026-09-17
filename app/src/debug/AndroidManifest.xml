@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Solo para el build de debug. Con applicationIdSuffix ".debug" la app de desarrollo
+    y la de Play conviven en el teléfono, y sin esto las dos aparecerían con el mismo
+    nombre "Antena AR" bajo el ícono: fácil probar en la equivocada sin darse cuenta.
+
+    Va hardcodeado y no como string porque app_name está traducido en values-en y
+    values-pt, y un override en src/debug/res/values solo cubriría el idioma por defecto.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:label="Antena AR (dev)"
+        tools:replace="android:label" />
+
+</manifest>

@@ -60,6 +60,12 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            // Paquete propio para que el build de desarrollo CONVIVA con la app de Play en
+            // el mismo teléfono. Sin esto, instalar un debug pisa la de Play, y como va
+            // firmado con otra clave, Play deja de poder actualizarla (pasó el 2026-09-17).
+            // Requiere que google-services.json tenga un cliente para ".debug".
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
     }
     compileOptions {
