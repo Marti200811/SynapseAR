@@ -76,6 +76,12 @@
     <string name="upgrade_btn_watch_ad">▶ Watch an ad and use it free for 30 min</string>
     <string name="rewarded_failed">Couldn\'t load the ad. Try again in a moment.</string>
     <string name="pro_purchase_unavailable">Purchase is not available right now. Check your connection and try again later.</string>
+    <string name="pro_purchase_failed">The purchase couldn\'t be completed. Please try again.</string>
+    <string name="pro_already_owned">You already own Antenna AR Pro. Restoring your purchase…</string>
+    <string name="pro_purchase_pending">Your payment is pending. Pro unlocks once Google Play confirms it.</string>
+    <string name="pro_restored">Purchase restored: Antenna AR Pro is unlocked.</string>
+    <string name="pro_restore_none">We couldn\'t find a Pro purchase on this Google account.</string>
+    <string name="pro_restore_failed">We couldn\'t check your Google Play purchases. Check your connection and try again.</string>
 
     <!-- Settings -->
     <string name="settings_units_label">Unit system</string>

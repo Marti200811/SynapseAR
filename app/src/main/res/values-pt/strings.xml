@@ -76,6 +76,12 @@
     <string name="upgrade_btn_watch_ad">▶ Ver um anúncio e usar 30 min grátis</string>
     <string name="rewarded_failed">Não foi possível carregar o anúncio. Tente novamente em instantes.</string>
     <string name="pro_purchase_unavailable">A compra não está disponível no momento. Verifique sua conexão e tente novamente mais tarde.</string>
+    <string name="pro_purchase_failed">Não foi possível concluir a compra. Tente novamente.</string>
+    <string name="pro_already_owned">Você já tem o Antena AR Pro. Restaurando sua compra…</string>
+    <string name="pro_purchase_pending">Seu pagamento está pendente. O Pro será ativado quando o Google Play confirmar.</string>
+    <string name="pro_restored">Compra restaurada: o Antena AR Pro está ativo.</string>
+    <string name="pro_restore_none">Não encontramos uma compra do Pro nesta conta do Google.</string>
+    <string name="pro_restore_failed">Não foi possível consultar suas compras no Google Play. Verifique sua conexão e tente novamente.</string>
 
     <!-- Settings -->
     <string name="settings_units_label">Sistema de unidades</string>

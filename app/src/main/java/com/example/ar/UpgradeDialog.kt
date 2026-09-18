@@ -107,7 +107,7 @@ class UpgradeDialog : DialogFragment() {
         }
 
         view.findViewById<TextView>(R.id.btnRestore).setOnClickListener {
-            billingManager?.restorePurchases()
+            billingManager?.restorePurchases(userInitiated = true)
             dismiss()
         }
 

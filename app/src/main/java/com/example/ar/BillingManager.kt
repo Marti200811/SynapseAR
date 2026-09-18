@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * En Play Console crear:
  *   Tipo: Producto dentro de la app (pago único)
  *   ID del producto: synapse_ar_pro   (Play Console NO permite guiones, solo _ . minúsculas y números)
- *   Precio base: $9.99
+ *   Precio base: US$3.99 (bajado de 9.99 el 2026-08-31)
  */
 class BillingManager(
     private val activity: Activity,
@@ -111,19 +111,44 @@ class BillingManager(
 
     // ── Verificar compra previa (restaurar si reinstala) ──────────────────────
 
-    fun restorePurchases() {
+    /**
+     * Consulta a Google Play las compras del usuario y actualiza el estado Pro.
+     *
+     * También confirma las compras que todavía no lo están. Una compra puede
+     * terminar fuera de [onPurchasesUpdated]: un pago pendiente que se acredita
+     * con la app cerrada, o un acknowledge que falló. Si nadie la confirma,
+     * Google la reembolsa sola a los 3 días y el usuario pierde Pro.
+     *
+     * @param userInitiated true si lo pidió el usuario con "Restaurar compra":
+     *   solo en ese caso se le avisa el resultado.
+     */
+    fun restorePurchases(userInitiated: Boolean = false) {
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.INAPP)
             .build()
 
         billingClient.queryPurchasesAsync(params) { result, purchases ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                val isActive = purchases.any { purchase ->
-                    purchase.products.contains(SKU_PRO) &&
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+                val proPurchases = purchases.filter { it.products.contains(SKU_PRO) }
+                val owned = proPurchases.filter {
+                    it.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
+                owned.forEach { acknowledgePurchase(it) }
+                val isActive = owned.isNotEmpty()
                 ProManager.setPro(activity, isActive)
                 onProStatusChanged(isActive)
+                if (userInitiated) {
+                    val pending = proPurchases.any {
+                        it.purchaseState == Purchase.PurchaseState.PENDING
+                    }
+                    toast(when {
+                        isActive -> R.string.pro_restored
+                        pending -> R.string.pro_purchase_pending
+                        else -> R.string.pro_restore_none
+                    })
+                }
+            } else if (userInitiated) {
+                toast(R.string.pro_restore_failed)
             }
         }
     }
@@ -150,18 +175,18 @@ class BillingManager(
             } else {
                 // El botón NUNCA debe quedar mudo (política Play "funcionalidad defectuosa"):
                 // si el producto no está disponible, dar feedback visible en lugar de no hacer nada.
-                notifyUnavailable()
+                toast(R.string.pro_purchase_unavailable)
             }
         }
     }
 
-    /** Feedback visible cuando la compra no puede iniciarse (producto no disponible/sin red). */
-    private fun notifyUnavailable() {
+    /** Mensaje visible para el usuario. Se puede llamar desde cualquier hilo. */
+    private fun toast(@androidx.annotation.StringRes message: Int) {
         if (!activity.isDestroyed && !activity.isFinishing) {
             activity.runOnUiThread {
                 android.widget.Toast.makeText(
                     activity,
-                    activity.getString(R.string.pro_purchase_unavailable),
+                    activity.getString(message),
                     android.widget.Toast.LENGTH_LONG
                 ).show()
             }
@@ -179,6 +204,10 @@ class BillingManager(
         // C02: verificar activity viva antes de postear a UI
         if (!activity.isDestroyed && !activity.isFinishing) {
             activity.runOnUiThread {
+                // El resultado no se mira acá a propósito: si el flujo no arranca,
+                // la librería también se lo avisa a onPurchasesUpdated (verificado en
+                // el bytecode de Billing 8.3.0). Tratarlo en los dos lados duplicaría
+                // el mensaje de error.
                 billingClient.launchBillingFlow(activity, billingFlowParams)
             }
         }
@@ -190,26 +219,29 @@ class BillingManager(
         when (result.responseCode) {
             BillingClient.BillingResponseCode.OK -> {
                 purchases?.forEach { purchase ->
+                    if (!purchase.products.contains(SKU_PRO)) return@forEach
                     when (purchase.purchaseState) {
                         Purchase.PurchaseState.PURCHASED -> {
-                            if (purchase.products.contains(SKU_PRO)) {
-                                acknowledgePurchase(purchase)
-                                ProManager.setPro(activity, true)
-                                onProStatusChanged(true)
-                            }
+                            acknowledgePurchase(purchase)
+                            ProManager.setPro(activity, true)
+                            onProStatusChanged(true)
                         }
-                        Purchase.PurchaseState.PENDING -> {
-                            // C03: compra pendiente (pago en efectivo, etc.) — no otorgar Pro todavía
-                            // El usuario verá el estado actualizado en la próxima apertura
-                        }
+                        // C03: compra pendiente (pago en efectivo, etc.) — no otorgar Pro todavía.
+                        // Cuando se acredite, restorePurchases() la confirma y activa Pro.
+                        Purchase.PurchaseState.PENDING -> toast(R.string.pro_purchase_pending)
                         else -> Unit
                     }
                 }
             }
             // C03: si ya lo compró (ej. reinstalación), restaurar en lugar de ignorar
-            BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> restorePurchases()
+            BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                toast(R.string.pro_already_owned)
+                restorePurchases()
+            }
             BillingClient.BillingResponseCode.USER_CANCELED -> Unit  // no-op intencional
-            else -> Unit  // otros errores de red / sistema, no fatales
+            // El diálogo ya se cerró: sin este aviso, un error deja al usuario sin
+            // respuesta (política Play "funcionalidad defectuosa").
+            else -> toast(R.string.pro_purchase_failed)
         }
     }
 
