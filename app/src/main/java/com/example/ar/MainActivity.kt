@@ -1,12 +1,14 @@
 package com.example.ar
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -37,16 +39,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Edge-to-edge por la vía moderna. Reemplaza a setDecorFitsSystemWindows(false) y a
+        // statusBarColor/navigationBarColor del tema, que Android 15 ignora y Play marca como
+        // obsoletos. dark(TRANSPARENT) en ambas barras = íconos claros sobre fondo transparente,
+        // que es como se veía antes con bg_deep detrás. Va antes de setContentView.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
+        )
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         // Mantener pantalla activa durante toda la sesión (app de trabajo profesional)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // ── Edge-to-edge: el sistema dibuja detrás de status y nav bar ───────
-        // Aplicamos insets manualmente para que el contenido no quede tapado
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
+        // El sistema dibuja detrás de las barras; aplicamos los insets a mano para que el
+        // contenido no quede tapado.
         ViewCompat.setOnApplyWindowInsetsListener(binding.navHostFragment) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(0, bars.top, 0, 0)
