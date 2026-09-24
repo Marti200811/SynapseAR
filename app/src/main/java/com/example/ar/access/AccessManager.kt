@@ -20,14 +20,33 @@ object AccessManager {
             nowMillis = System.currentTimeMillis()
         )
 
-    /** Otorga acceso temporal a [feature]. Se llama al ganar la recompensa de un anuncio. */
+    /**
+     * `true` si todavía le queda el anuncio del día para esta función. Lo consulta el
+     * diálogo antes de ofrecer el botón: si ya lo usó, no se le muestra una opción que
+     * no va a funcionar.
+     */
+    fun canWatchAdFor(context: Context, feature: Feature): Boolean =
+        AccessRules.canWatchAdToday(
+            lastAdDay = UnlockStore.lastAdDay(context, feature),
+            today = today()
+        )
+
+    /**
+     * Otorga acceso temporal a [feature]. Se llama al ganar la recompensa de un anuncio.
+     * Deja registrado el día para que no se pueda repetir hasta mañana.
+     */
     fun grantTemporary(context: Context, feature: Feature) {
         UnlockStore.setExpiryMillis(
             context,
             feature,
             System.currentTimeMillis() + AccessRules.UNLOCK_DURATION_MS
         )
+        UnlockStore.setLastAdDay(context, feature, today())
     }
+
+    private fun today(): String =
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            .format(java.util.Date(System.currentTimeMillis()))
 
     /** Milisegundos que le quedan al desbloqueo temporal. 0 si no hay o ya venció. */
     fun remainingMillis(context: Context, feature: Feature): Long =

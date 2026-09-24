@@ -164,6 +164,24 @@
             android:layout_marginTop="8dp"
             android:visibility="gone"/>
 
+        <!--
+            Se muestra en lugar del botón cuando el anuncio del día de esa función ya se
+            usó. Sin esto el botón simplemente desaparecería y el usuario no entendería
+            por qué: el mismo problema del botón muerto, al revés.
+        -->
+        <TextView
+            android:id="@+id/tvAdUsedToday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/upgrade_ad_used_today"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"/>
+
         <TextView
             android:id="@+id/btnRestore"
             android:layout_width="match_parent"

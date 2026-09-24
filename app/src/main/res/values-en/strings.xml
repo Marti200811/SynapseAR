@@ -74,6 +74,7 @@
     <string name="upgrade_btn_later">Maybe later</string>
     <string name="upgrade_trial_note">One-time payment. No subscription or recurring charges.</string>
     <string name="upgrade_btn_watch_ad">▶ Watch an ad and use it free for 30 min</string>
+    <string name="upgrade_ad_used_today">You already used today’s free unlock for this feature. With Pro you get it always, with no time limit and no ads.</string>
     <string name="rewarded_failed">Couldn\'t load the ad. Try again in a moment.</string>
     <string name="pro_purchase_unavailable">Purchase is not available right now. Check your connection and try again later.</string>
     <string name="pro_purchase_failed">The purchase couldn\'t be completed. Please try again.</string>

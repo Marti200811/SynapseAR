@@ -15,6 +15,18 @@ internal object UnlockStore {
 
     private fun key(feature: Feature) = "unlock_until_${feature.name}"
 
+    private fun adDayKey(feature: Feature) = "unlock_ad_day_${feature.name}"
+
+    /** Día ("yyyy-MM-dd") del último anuncio mirado por esta función; null si nunca. */
+    fun lastAdDay(context: Context, feature: Feature): String? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(adDayKey(feature), null)
+
+    fun setLastAdDay(context: Context, feature: Feature, day: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString(adDayKey(feature), day).apply()
+    }
+
     /** Timestamp (epoch millis) hasta el que vale el desbloqueo. 0 = nunca se desbloqueó. */
     fun expiryMillis(context: Context, feature: Feature): Long =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

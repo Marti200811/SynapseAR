@@ -74,6 +74,7 @@
     <string name="upgrade_btn_later">Tal vez después</string>
     <string name="upgrade_trial_note">Pago único. Sin suscripción ni cargos recurrentes.</string>
     <string name="upgrade_btn_watch_ad">▶ Ver un anuncio y usar 30 min gratis</string>
+    <string name="upgrade_ad_used_today">Ya usaste el desbloqueo gratis de hoy para esta función. Con Pro la tenés siempre, sin límite de tiempo y sin anuncios.</string>
     <string name="rewarded_failed">No se pudo cargar el anuncio. Probá de nuevo en un momento.</string>
     <string name="pro_purchase_unavailable">La compra no está disponible en este momento. Verificá tu conexión e intentá de nuevo más tarde.</string>
     <string name="pro_purchase_failed">No se pudo completar la compra. Probá de nuevo.</string>

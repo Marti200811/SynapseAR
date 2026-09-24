@@ -48,4 +48,26 @@ class AccessRulesTest {
     fun `la duracion del desbloqueo es de 30 minutos`() {
         assertEquals(30L * 60L * 1000L, AccessRules.UNLOCK_DURATION_MS)
     }
+
+    @Test
+    fun `sin haber mirado nunca un anuncio, puede mirar uno`() {
+        assertTrue(AccessRules.canWatchAdToday(lastAdDay = null, today = "2026-09-24"))
+    }
+
+    @Test
+    fun `si ya miro un anuncio hoy, no puede mirar otro`() {
+        assertFalse(AccessRules.canWatchAdToday(lastAdDay = "2026-09-24", today = "2026-09-24"))
+    }
+
+    @Test
+    fun `al dia siguiente vuelve a tener su anuncio`() {
+        assertTrue(AccessRules.canWatchAdToday(lastAdDay = "2026-09-24", today = "2026-09-25"))
+    }
+
+    @Test
+    fun `un dia guardado en el futuro no bloquea para siempre`() {
+        // Reloj movido hacia atras: el dia guardado quedo adelante del actual. Mientras
+        // no sea exactamente hoy, el usuario conserva su anuncio — no queda encerrado.
+        assertTrue(AccessRules.canWatchAdToday(lastAdDay = "2027-01-01", today = "2026-09-24"))
+    }
 }

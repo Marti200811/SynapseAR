@@ -57,10 +57,19 @@ class UpgradeDialog : DialogFragment() {
         // arrancar, por ejemplo), la opción no volvería a aparecer nunca.
         if (ads != null && !ads.isAdReady()) ads.preload()
 
+        // Un anuncio por función y por día. Si ya lo usó, en vez del botón se muestra una
+        // línea que lo explica: que el botón desaparezca sin más deja al usuario sin
+        // entender qué pasó.
+        val quedaAnuncioHoy = feat == null ||
+            AccessManager.canWatchAdFor(requireContext(), feat)
+        if (!quedaAnuncioHoy) {
+            view.findViewById<TextView>(R.id.tvAdUsedToday).visibility = android.view.View.VISIBLE
+        }
+
         // Solo se ofrece si HAY un anuncio cargado ahora. Nunca se muestra un botón
         // deshabilitado con "Cargando…": ese fue un bug real en el proyecto hermano
         // Oráculo, donde el usuario veía un botón muerto sin saber por qué.
-        if (ads != null && feat != null && ads.isAdReady()) {
+        if (ads != null && feat != null && ads.isAdReady() && quedaAnuncioHoy) {
             btnAd.visibility = android.view.View.VISIBLE
             Analytics.rewardedOffered(requireContext(), source)
             btnAd.setOnClickListener {
