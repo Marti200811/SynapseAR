@@ -75,6 +75,22 @@ class ArOverlayView @JvmOverloads constructor(
     var satelliteBelt: List<SatelliteDot> = emptyList()
         set(v) { field = v; invalidate() }
 
+    /** Sol o luna en su posición real del cielo. [label]: texto corto junto al disco (ej. "62%" de la luna). */
+    data class SkyBody(
+        val azimuth: Float,
+        val elevation: Float,
+        val isSun: Boolean,
+        val label: String = ""
+    )
+
+    /** Punto de la trayectoria del sol; [hourLabel] solo en las horas en punto. */
+    data class SkyPathPoint(val azimuth: Float, val elevation: Float, val hourLabel: String?)
+
+    var skyBodies: List<SkyBody> = emptyList()
+        set(v) { field = v; invalidate() }
+    var sunPath: List<SkyPathPoint> = emptyList()
+        set(v) { field = v; invalidate() }
+
     // ── Campo de visión de la cámara trasera ─────────────────────────────────
     // Valores por defecto razonables; ArFragment los reemplaza con el FOV real
     // leído de CameraInfo.intrinsics para mayor precisión de apuntado.
@@ -128,6 +144,8 @@ class ArOverlayView @JvmOverloads constructor(
         drawElevationBar(canvas, w, h, p)
         drawHorizonLine(canvas, w, h)
         drawSatelliteBelt(canvas, w, h, p)   // cinturón detrás de la retícula
+        drawSunPath(canvas, w, h)
+        drawSkyBodies(canvas, w, h)
         drawCenterCrosshair(canvas, w, h, p)
         drawTargetReticle(canvas, w, h, p)
         drawCompassDial(canvas, w, h, p)
@@ -366,6 +384,67 @@ class ArOverlayView @JvmOverloads constructor(
                     namePaint.color = Color.argb(140, 180, 230, 240)
                     canvas.drawText(dot.name.take(10), sx, sy - 10f, namePaint)
                 }
+            }
+        }
+    }
+
+    // ── 5b. Sol, luna y trayectoria del sol ──────────────────────────────────
+
+    /** Proyección a pantalla con el mismo FOV que el resto; null si cae fuera de la vista. */
+    private fun project(az: Float, el: Float, w: Float, h: Float): Pair<Float, Float>? {
+        var azDiff = az - azimuth
+        while (azDiff > 180f) azDiff -= 360f
+        while (azDiff < -180f) azDiff += 360f
+        val sx = w / 2f + (azDiff / (fovH / 2f)) * (w / 2f)
+        val sy = h / 2f - ((el - pitchElevation) / (fovV / 2f)) * (h / 2f)
+        return if (sx in 0f..w && sy in 0f..h) sx to sy else null
+    }
+
+    private val pathDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL; color = Color.argb(170, 255, 214, 64)
+    }
+    private val pathLblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; color = Color.argb(210, 255, 232, 150); isFakeBoldText = true
+    }
+
+    private fun drawSunPath(canvas: Canvas, w: Float, h: Float) {
+        if (sunPath.isEmpty()) return
+        pathLblPaint.textSize = w * 0.028f
+        for (pt in sunPath) {
+            if (pt.elevation < 0f) continue
+            val (sx, sy) = project(pt.azimuth, pt.elevation, w, h) ?: continue
+            canvas.drawCircle(sx, sy, if (pt.hourLabel != null) 5f else 3f, pathDotPaint)
+            pt.hourLabel?.let { canvas.drawText(it, sx, sy - 12f, pathLblPaint) }
+        }
+    }
+
+    private val sunPaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.rgb(255, 196, 0) }
+    private val rayPaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = Color.rgb(255, 196, 0) }
+    private val moonPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.rgb(226, 232, 240) }
+    private val moonEdge  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f; color = Color.argb(200, 148, 163, 184) }
+    private val bodyLbl   = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; isFakeBoldText = true }
+
+    private fun drawSkyBodies(canvas: Canvas, w: Float, h: Float) {
+        for (b in skyBodies) {
+            if (b.elevation < -1f) continue   // bajo el horizonte
+            val (sx, sy) = project(b.azimuth, b.elevation, w, h) ?: continue
+            val r = w * 0.035f
+            if (b.isSun) {
+                for (i in 0 until 12) {
+                    val a = i * (PI / 6).toFloat()
+                    canvas.drawLine(sx + cos(a) * r * 1.3f, sy + sin(a) * r * 1.3f,
+                                    sx + cos(a) * r * 1.8f, sy + sin(a) * r * 1.8f, rayPaint)
+                }
+                canvas.drawCircle(sx, sy, r, sunPaint)
+                bodyLbl.color = Color.rgb(255, 214, 64)
+            } else {
+                canvas.drawCircle(sx, sy, r, moonPaint)
+                canvas.drawCircle(sx, sy, r, moonEdge)
+                bodyLbl.color = Color.rgb(226, 232, 240)
+            }
+            if (b.label.isNotEmpty()) {
+                bodyLbl.textSize = w * 0.032f
+                canvas.drawText(b.label, sx, sy + r * 2.6f, bodyLbl)
             }
         }
     }

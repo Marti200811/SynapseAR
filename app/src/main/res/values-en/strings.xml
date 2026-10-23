@@ -120,4 +120,24 @@
     <string name="waypoint_delete_confirm">Delete this point?</string>
     <string name="waypoint_delete">Delete</string>
     <string name="waypoint_deleted">Point deleted</string>
+    <string name="sunmoon_title">Sun and moon</string>
+    <string name="sunmoon_no_gps">Waiting for a GPS fix to calculate times for your location…</string>
+    <string name="sunmoon_daylight_left">☀ Daylight left: %1$s</string>
+    <string name="sunmoon_sun_all_day">☀ The sun will not set in the next hours</string>
+    <string name="sunmoon_sun_down">🌙 The sun has set</string>
+    <string name="sunmoon_sunrise">Sunrise: %1$s</string>
+    <string name="sunmoon_sunset">Sunset: %1$s</string>
+    <string name="sunmoon_civil_dusk">End of civil twilight: %1$s</string>
+    <string name="sunmoon_moon_phase">🌙 %1$s (%2$d%% lit)</string>
+    <string name="sunmoon_moonrise">Moonrise: %1$s</string>
+    <string name="sunmoon_moonset">Moonset: %1$s</string>
+    <string name="sunmoon_note">Calculated offline, accurate to a few minutes. (+1) = tomorrow. In the mountains the sun may disappear earlier behind the terrain.</string>
+    <string name="moon_new">New moon</string>
+    <string name="moon_waxing_crescent">Waxing crescent</string>
+    <string name="moon_first_quarter">First quarter</string>
+    <string name="moon_waxing_gibbous">Waxing gibbous</string>
+    <string name="moon_full">Full moon</string>
+    <string name="moon_waning_gibbous">Waning gibbous</string>
+    <string name="moon_last_quarter">Last quarter</string>
+    <string name="moon_waning_crescent">Waning crescent</string>
 </resources>
