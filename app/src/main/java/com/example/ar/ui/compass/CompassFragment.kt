@@ -26,7 +26,12 @@ import com.google.android.gms.location.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import android.widget.Toast
+import com.example.ar.waypoint.WaypointDialog
+import com.example.ar.waypoint.WaypointManager
 import com.example.ar.Analytics
 import com.example.ar.CalibrationDialog
 import com.example.ar.CompassTheme
@@ -48,6 +53,7 @@ import com.example.ar.wifi.WifiScannerDialog
 import com.example.ar.databinding.FragmentCompassBinding
 import com.example.ar.satellite.SatelliteCalculator
 import com.example.ar.satellite.SatellitePickerDialog
+import com.example.ar.sensors.AltimeterManager
 import com.example.ar.sensors.OrientationManager
 import com.example.ar.util.GeoUtils
 
@@ -58,6 +64,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     private val sharedVm: SharedViewModel by activityViewModels()
 
     private lateinit var orientation: OrientationManager
+    private lateinit var altimeter: AltimeterManager
     private lateinit var fusedLocation: FusedLocationProviderClient
     private var currentLocation: Location? = null
 
@@ -71,6 +78,9 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         override fun onLocationResult(result: LocationResult) {
             val loc = result.lastLocation ?: return
             currentLocation = loc
+            orientation.updateLocation(loc)
+            altimeter.updateLocation(loc)
+            _binding?.txtDeclination?.text = formatDeclination(orientation.declinationDeg)
             updateReadouts()
             // Obtener código de país en background (solo si aún no lo tenemos)
             if (userCountryCode == null) {
@@ -105,6 +115,17 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         orientation = OrientationManager(requireContext()).also { it.listener = this }
+        altimeter = AltimeterManager(requireContext()).also {
+            it.listener = object : AltimeterManager.Listener {
+                override fun onAltitude(altitudeM: Double, pressureHpa: Float?, fromBarometer: Boolean) {
+                    val b = _binding ?: return
+                    val alt = if (GeoUtils.usesImperial(context)) "%.0f ft".format(Locale.US, altitudeM * 3.28084)
+                              else "%.0f m".format(Locale.US, altitudeM)
+                    val extra = if (pressureHpa != null) "  ·  %.0f hPa".format(Locale.US, pressureHpa) else ""
+                    b.txtAltitude.text = "⛰ $alt$extra" + if (fromBarometer) "" else "  (GPS)"
+                }
+            }
+        }
         fusedLocation = LocationServices.getFusedLocationProviderClient(requireContext())
 
         // Botón configuración ⚙
@@ -201,6 +222,37 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             }
         }
 
+        // Guardar la posición actual como punto (auto, carpa, refugio…)
+        binding.btnSavePoint.setOnClickListener {
+            val loc = currentLocation
+            if (loc == null) {
+                Toast.makeText(requireContext(), getString(R.string.waypoint_no_gps), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val stamp = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date())
+            val name = getString(R.string.waypoint_default_name, stamp)
+            WaypointManager.add(
+                requireContext(), name, loc.latitude, loc.longitude,
+                if (loc.hasAltitude()) loc.altitude else null
+            )
+            Toast.makeText(requireContext(), getString(R.string.waypoint_saved, name), Toast.LENGTH_SHORT).show()
+        }
+
+        // Lista de puntos: tocar uno = volver a él
+        binding.btnMyPoints.setOnClickListener {
+            WaypointDialog(
+                location = currentLocation,
+                hasTarget = sharedVm.target.value != null,
+                onGoTo = { w ->
+                    // Un satélite o torre elegidos tienen prioridad sobre el objetivo: se sueltan.
+                    sharedVm.selectedSatellite.value = null
+                    sharedVm.selectedTdt.value = null
+                    sharedVm.target.value = TargetPoint(w.lat, w.lon, "📍 ${w.name}")
+                },
+                onClearTarget = { sharedVm.target.value = null }
+            ).show(parentFragmentManager, "waypoints")
+        }
+
         // Observar tipo de antena
         sharedVm.antennaType.observe(viewLifecycleOwner) { type ->
             binding.btnSelectAntenna.text = "${type.emoji} ${type.label.take(12)}"
@@ -273,6 +325,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     override fun onResume() {
         super.onResume()
         orientation.start()
+        altimeter.start()
         ensureLocation()
         beeper.start()
     }
@@ -280,6 +333,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
     override fun onPause() {
         super.onPause()
         orientation.stop()
+        altimeter.stop()
         fusedLocation.removeLocationUpdates(locationCallback)
         beeper.stop()
     }
@@ -307,6 +361,10 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         if (!granted) return
         val req = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1500L).build()
         fusedLocation.requestLocationUpdates(req, locationCallback, Looper.getMainLooper())
+    }
+
+    private fun formatDeclination(deg: Float): String {
+        return getString(R.string.true_north_declination, "%+.1f°".format(Locale.US, deg))
     }
 
     private fun updateReadouts() {
@@ -351,6 +409,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 binding.txtBearing.text   = "%03.0f°".format(bearing)
                 binding.txtElevation.text = "--°"
                 binding.txtDistance.text  = GeoUtils.formatDistance(distance, requireContext())
+                if (sharedVm.trackedWifi.value == null) binding.tvSelectedSat.text = target.name
                 binding.compass.targetBearing   = bearing.toFloat()
                 binding.compass.targetElevation = null
                 binding.compass.distanceMeters  = distance

@@ -1,6 +1,8 @@
 package com.example.ar.sensors
 
 import android.content.Context
+import android.location.Location
+import android.hardware.GeomagneticField
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -54,6 +56,25 @@ class OrientationManager(private val context: Context) : SensorEventListener {
 
     var listener: Listener? = null
 
+    /**
+     * Declinación magnética (grados, + = este) del lugar donde estamos.
+     * Los sensores de Android miden contra el norte magnético; los rumbos a
+     * satélites, torres y puntos se calculan contra el verdadero, así que se
+     * suma acá una sola vez y todas las pantallas quedan en norte verdadero.
+     */
+    @Volatile
+    var declinationDeg: Float = 0f
+        private set
+
+    fun updateLocation(location: Location) {
+        declinationDeg = GeomagneticField(
+            location.latitude.toFloat(),
+            location.longitude.toFloat(),
+            location.altitude.toFloat(),
+            System.currentTimeMillis()
+        ).declination
+    }
+
     // Watchdog: TYPE_GEOMAGNETIC_ROTATION_VECTOR puede stallarse sin aviso (bug Android/Motorola).
     // Chequeo cada 500ms; si no llegó ningún evento en 1s, re-registramos el sensor.
     // Tras 3 reinicios consecutivos sin estabilizarse, caemos al TYPE_ROTATION_VECTOR como
@@ -99,6 +120,7 @@ class OrientationManager(private val context: Context) : SensorEventListener {
         watchdogHandler.removeCallbacks(watchdogRunnable)
         sensorManager.unregisterListener(this)
         smoothAzimuth     = -1f
+        cameraPoseReady   = false
         lastNotifyMs      = 0L
         lastEventMs       = 0L
         stallRestartCount = 0
@@ -154,7 +176,7 @@ class OrientationManager(private val context: Context) : SensorEventListener {
         }
 
         SensorManager.getOrientation(matrixForReading, orientationAngles)
-        val rawAzimuth = ((Math.toDegrees(orientationAngles[0].toDouble()) + 360.0) % 360.0).toFloat()
+        val rawAzimuth = ((Math.toDegrees(orientationAngles[0].toDouble()) + declinationDeg + 720.0) % 360.0).toFloat()
         val rawPitch   = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
         val rawRoll    = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
 
@@ -171,11 +193,44 @@ class OrientationManager(private val context: Context) : SensorEventListener {
             smoothRoll    += alpha * (rawRoll  - smoothRoll)
         }
 
+        updateCameraPose()
+
         val now = android.os.SystemClock.elapsedRealtime()
         if (now - lastNotifyMs >= notifyIntervalMs) {
             lastNotifyMs = now
             listener?.onOrientation(smoothAzimuth, smoothPitch, smoothRoll, currentMode)
         }
+    }
+
+    /**
+     * Hacia dónde mira la cámara trasera (eje −Z del teléfono), calculado directo de la
+     * matriz de rotación y sin cambio de modo: elevación + hacia el cielo, azimut al norte
+     * verdadero. Lo usan el sol y la luna del AR; no reemplaza al azimut/pitch de arriba.
+     */
+    @Volatile var cameraAzimuth: Float = 0f
+        private set
+    @Volatile var cameraElevation: Float = 0f
+        private set
+    private var cameraPoseReady = false
+
+    private fun updateCameraPose() {
+        val dirEast  = -rotationMatrix[2]
+        val dirNorth = -rotationMatrix[5]
+        val dirUp    = -rotationMatrix[8]
+        val rawEl = Math.toDegrees(kotlin.math.asin(dirUp.toDouble().coerceIn(-1.0, 1.0))).toFloat()
+        val rawAz = ((Math.toDegrees(kotlin.math.atan2(dirEast.toDouble(), dirNorth.toDouble())) +
+                declinationDeg + 720.0) % 360.0).toFloat()
+        if (!cameraPoseReady) {
+            cameraAzimuth = rawAz
+            cameraElevation = rawEl
+            cameraPoseReady = true
+            return
+        }
+        var azDiff = rawAz - cameraAzimuth
+        if (azDiff > 180f)  azDiff -= 360f
+        if (azDiff < -180f) azDiff += 360f
+        cameraAzimuth = ((cameraAzimuth + alpha * azDiff) + 360f) % 360f
+        cameraElevation += alpha * (rawEl - cameraElevation)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

@@ -24,6 +24,8 @@ import com.example.ar.ProximityBeeper
 import com.example.ar.R
 import com.example.ar.RatingPrompt
 import com.example.ar.SharedViewModel
+import com.example.ar.astro.SunMoon
+import com.example.ar.astro.SunMoonDialog
 import com.example.ar.databinding.FragmentArBinding
 import com.example.ar.satellite.SatelliteCalculator
 import com.example.ar.satellite.SatelliteDatabase
@@ -53,8 +55,47 @@ class ArFragment : Fragment(), OrientationManager.Listener {
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             currentLocation = result.lastLocation
+            currentLocation?.let { orientationManager.updateLocation(it) }
             updateReadouts()
             updateSatelliteBelt()
+            updateSky()
+        }
+    }
+
+    private var lastSkyMs = 0L
+    private var lastPathMs = 0L
+
+    /**
+     * Sol, luna y trayectoria del sol. El sol se mueve 0,25°/min: alcanza con recalcular
+     * cada 20 s; la trayectoria completa, cada 5 min.
+     */
+    private fun updateSky() {
+        val loc = currentLocation ?: return
+        val b = _binding ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastSkyMs < 20_000L) return
+        lastSkyMs = now
+
+        val sun = SunMoon.sun(now, loc.latitude, loc.longitude)
+        val moon = SunMoon.moon(now, loc.latitude, loc.longitude)
+        val moonPct = (SunMoon.moonPhase(now).fraction * 100).toInt()
+        b.arOverlay.skyBodies = listOf(
+            ArOverlayView.SkyBody(sun.azimuthDeg.toFloat(), sun.elevationDeg.toFloat(), true),
+            ArOverlayView.SkyBody(moon.azimuthDeg.toFloat(), moon.elevationDeg.toFloat(), false, "$moonPct%")
+        )
+
+        if (now - lastPathMs >= 300_000L) {
+            lastPathMs = now
+            val step = 15
+            val start = now - now % (step * 60_000L)
+            val hourFmt = java.text.SimpleDateFormat("H'h'", java.util.Locale.getDefault())
+            b.arOverlay.sunPath = SunMoon.sunPath(start, loc.latitude, loc.longitude, step).map { (t, pos) ->
+                val onTheHour = (t / 60_000L) % 60L == 0L
+                ArOverlayView.SkyPathPoint(
+                    pos.azimuthDeg.toFloat(), pos.elevationDeg.toFloat(),
+                    if (onTheHour) hourFmt.format(java.util.Date(t)) else null
+                )
+            }
         }
     }
 
@@ -77,6 +118,10 @@ class ArFragment : Fragment(), OrientationManager.Listener {
 
         orientationManager = OrientationManager(requireContext()).also { it.listener = this }
         fusedLocation = LocationServices.getFusedLocationProviderClient(requireContext())
+
+        binding.btnSunMoon.setOnClickListener {
+            SunMoonDialog(currentLocation).show(parentFragmentManager, "sunmoon")
+        }
 
         sharedVm.target.observe(viewLifecycleOwner) { updateReadouts() }
         sharedVm.selectedSatellite.observe(viewLifecycleOwner) {
@@ -190,6 +235,8 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         // HORIZONTAL: Android da pitch negativo al inclinar hacia el cielo → negamos.
         // VERTICAL: el remapping de ejes (AXIS_X/AXIS_Z) ya da pitch positivo → lo usamos tal cual.
         lastElevationAngle = if (mode == OrientationManager.Mode.HORIZONTAL) -pitch else pitch
+        b.arOverlay.cameraAzimuth   = orientationManager.cameraAzimuth
+        b.arOverlay.cameraElevation = orientationManager.cameraElevation
         b.arOverlay.updateSensorData(
             az       = azimuth,
             p        = pitch,
