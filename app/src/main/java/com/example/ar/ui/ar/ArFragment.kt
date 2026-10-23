@@ -235,6 +235,8 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         // HORIZONTAL: Android da pitch negativo al inclinar hacia el cielo → negamos.
         // VERTICAL: el remapping de ejes (AXIS_X/AXIS_Z) ya da pitch positivo → lo usamos tal cual.
         lastElevationAngle = if (mode == OrientationManager.Mode.HORIZONTAL) -pitch else pitch
+        b.arOverlay.cameraAzimuth   = orientationManager.cameraAzimuth
+        b.arOverlay.cameraElevation = orientationManager.cameraElevation
         b.arOverlay.updateSensorData(
             az       = azimuth,
             p        = pitch,

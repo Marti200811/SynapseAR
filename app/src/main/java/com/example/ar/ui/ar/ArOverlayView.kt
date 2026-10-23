@@ -86,6 +86,10 @@ class ArOverlayView @JvmOverloads constructor(
     /** Punto de la trayectoria del sol; [hourLabel] solo en las horas en punto. */
     data class SkyPathPoint(val azimuth: Float, val elevation: Float, val hourLabel: String?)
 
+    /** Hacia dónde mira la cámara (ver OrientationManager.cameraAzimuth/Elevation). */
+    var cameraAzimuth: Float = 0f
+    var cameraElevation: Float = 0f
+
     var skyBodies: List<SkyBody> = emptyList()
         set(v) { field = v; invalidate() }
     var sunPath: List<SkyPathPoint> = emptyList()
@@ -392,11 +396,11 @@ class ArOverlayView @JvmOverloads constructor(
 
     /** Proyección a pantalla con el mismo FOV que el resto; null si cae fuera de la vista. */
     private fun project(az: Float, el: Float, w: Float, h: Float): Pair<Float, Float>? {
-        var azDiff = az - azimuth
+        var azDiff = az - cameraAzimuth
         while (azDiff > 180f) azDiff -= 360f
         while (azDiff < -180f) azDiff += 360f
         val sx = w / 2f + (azDiff / (fovH / 2f)) * (w / 2f)
-        val sy = h / 2f - ((el - pitchElevation) / (fovV / 2f)) * (h / 2f)
+        val sy = h / 2f - ((el - cameraElevation) / (fovV / 2f)) * (h / 2f)
         return if (sx in 0f..w && sy in 0f..h) sx to sy else null
     }
 
