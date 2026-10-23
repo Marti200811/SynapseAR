@@ -53,6 +53,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             currentLocation = result.lastLocation
+            currentLocation?.let { orientationManager.updateLocation(it) }
             updateReadouts()
             updateSatelliteBelt()
         }

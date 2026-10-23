@@ -178,6 +178,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
     }
 
     private fun onNewLocation(location: Location) {
+        orientationManager.updateLocation(location)
         userLatLng = LatLng(location.latitude, location.longitude)
         val target = sharedViewModel.target.value ?: run {
             tvBearing.text  = getString(R.string.no_angle)

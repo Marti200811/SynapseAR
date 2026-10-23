@@ -1,6 +1,8 @@
 package com.example.ar.sensors
 
 import android.content.Context
+import android.location.Location
+import android.hardware.GeomagneticField
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -53,6 +55,25 @@ class OrientationManager(private val context: Context) : SensorEventListener {
     private var currentMode = Mode.HORIZONTAL
 
     var listener: Listener? = null
+
+    /**
+     * Declinación magnética (grados, + = este) del lugar donde estamos.
+     * Los sensores de Android miden contra el norte magnético; los rumbos a
+     * satélites, torres y puntos se calculan contra el verdadero, así que se
+     * suma acá una sola vez y todas las pantallas quedan en norte verdadero.
+     */
+    @Volatile
+    var declinationDeg: Float = 0f
+        private set
+
+    fun updateLocation(location: Location) {
+        declinationDeg = GeomagneticField(
+            location.latitude.toFloat(),
+            location.longitude.toFloat(),
+            location.altitude.toFloat(),
+            System.currentTimeMillis()
+        ).declination
+    }
 
     // Watchdog: TYPE_GEOMAGNETIC_ROTATION_VECTOR puede stallarse sin aviso (bug Android/Motorola).
     // Chequeo cada 500ms; si no llegó ningún evento en 1s, re-registramos el sensor.
@@ -154,7 +175,7 @@ class OrientationManager(private val context: Context) : SensorEventListener {
         }
 
         SensorManager.getOrientation(matrixForReading, orientationAngles)
-        val rawAzimuth = ((Math.toDegrees(orientationAngles[0].toDouble()) + 360.0) % 360.0).toFloat()
+        val rawAzimuth = ((Math.toDegrees(orientationAngles[0].toDouble()) + declinationDeg + 720.0) % 360.0).toFloat()
         val rawPitch   = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
         val rawRoll    = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
 
