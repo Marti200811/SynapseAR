@@ -86,6 +86,7 @@
 
     <!-- Settings -->
     <string name="settings_units_label">Sistema de unidades</string>
+    <string name="rate_app">⭐ Avaliar o app</string>
     <string name="units_auto">Automático (baseado no idioma do telefone)</string>
     <string name="units_metric">Métrico  —  km / m</string>
     <string name="units_imperial">Imperial  —  mi / ft</string>

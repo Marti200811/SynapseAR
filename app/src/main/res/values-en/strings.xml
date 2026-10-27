@@ -86,6 +86,7 @@
 
     <!-- Settings -->
     <string name="settings_units_label">Unit system</string>
+    <string name="rate_app">⭐ Rate this app</string>
     <string name="units_auto">Automatic (based on phone language)</string>
     <string name="units_metric">Metric  —  km / m</string>
     <string name="units_imperial">Imperial  —  mi / ft</string>

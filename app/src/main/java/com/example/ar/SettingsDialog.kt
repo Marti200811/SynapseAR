@@ -37,6 +37,13 @@ class SettingsDialog : DialogFragment() {
                 onUnitsChanged?.invoke()
                 dialog.dismiss()
             }
+            // Única superficie de ajustes que tiene la app, así que el acceso para
+            // calificar va acá. Abre la ficha de Play, NO la In-App Review API:
+            // Google desaconseja disparar esa API desde un botón, porque el usuario
+            // puede tener la cuota agotada y no pasaría nada al tocarlo.
+            .setNeutralButton(getString(R.string.rate_app)) { _, _ ->
+                RatingPrompt.openStoreListing(ctx)
+            }
             .create()
     }
 }
