@@ -31,8 +31,8 @@ android {
         applicationId = "com.quantixlabs.synapsear"
         minSdk = 26
         targetSdk = 36
-        versionCode = 20
-        versionName = "1.4.0"
+        versionCode = 21
+        versionName = "1.4.1"
     }
 
     signingConfigs {
