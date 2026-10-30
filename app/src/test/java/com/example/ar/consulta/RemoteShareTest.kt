@@ -24,18 +24,23 @@ class RemoteShareTest {
         tipElevation   = "La elevación es la inclinación del plato."
     )
 
-    // Los números se formatean con el locale de FORMAT: lo fijamos igual que
-    // RemoteQueryTest para que el resultado no dependa de la PC.
+    // build() sin locale explícito toma el de Locale.Category.FORMAT (el del teléfono).
+    // Lo fijamos en US, igual que RemoteQueryTest, para que los tests que no pasan
+    // locale no dependan de la PC; el test de es-AR lo cambia a propósito.
+    private lateinit var localeAntes: Locale
     private lateinit var formatLocaleAntes: Locale
 
     @Before
     fun fijarLocaleDeFormato() {
+        localeAntes = Locale.getDefault()
         formatLocaleAntes = Locale.getDefault(Locale.Category.FORMAT)
         Locale.setDefault(Locale.Category.FORMAT, Locale.US)
     }
 
     @After
     fun restaurarLocaleDeFormato() {
+        // setDefault(Locale) pisa todas las categorías: primero el general, después FORMAT.
+        Locale.setDefault(localeAntes)
         Locale.setDefault(Locale.Category.FORMAT, formatLocaleAntes)
     }
 
@@ -81,6 +86,37 @@ class RemoteShareTest {
     fun `la elevacion lleva un decimal`() {
         val msg = RemoteShare.build(visible(), textos, Locale.US)
         assertTrue(msg.contains("49.7"))
+    }
+
+    // ── Separador decimal ─────────────────────────────────────────────────
+    // Decisión del proyecto: el separador es el del teléfono, para que el mensaje
+    // diga lo mismo que la pantalla ("61,0°O" en un teléfono en español). Estos tres
+    // tests se ponen rojos si alguien cablea Locale.US adentro de build().
+
+    private val esAR: Locale = Locale.forLanguageTag("es-AR")
+
+    @Test
+    fun `con locale es-AR la elevacion lleva coma`() {
+        val msg = RemoteShare.build(visible(), textos, esAR)
+        assertTrue("falta la elevación con coma", msg.lines().contains("Elevación: 49,7°"))
+    }
+
+    @Test
+    fun `con locale US la elevacion lleva punto`() {
+        val msg = RemoteShare.build(visible(), textos, Locale.US)
+        assertTrue("falta la elevación con punto", msg.lines().contains("Elevación: 49.7°"))
+    }
+
+    @Test
+    fun `sin locale explicito usa el de formato del telefono`() {
+        // El locale general queda en US y SOLO FORMAT en es-AR: así el test distingue
+        // getDefault(FORMAT) de getDefault() sin importar el idioma de la PC.
+        // Nota: setDefault(Locale) pisa todas las categorías, por eso va primero.
+        Locale.setDefault(Locale.US)
+        Locale.setDefault(Locale.Category.FORMAT, esAR)
+        val msg = RemoteShare.build(visible(), textos)
+        assertTrue("el default tiene que ser el de FORMAT: coma en es-AR",
+            msg.lines().contains("Elevación: 49,7°"))
     }
 
     @Test

@@ -26,10 +26,15 @@ object RemoteShare {
         val tipElevation: String
     )
 
+    /**
+     * El separador decimal es el del teléfono (categoría FORMAT, la misma que usa
+     * `Satellite.positionLabel` con su `"%.1f"`): el mensaje tiene que decir lo mismo
+     * que la pantalla desde la que se mandó. No fijar `Locale.US` acá adentro.
+     */
     fun build(
         result: RemoteResult,
         texts: Texts,
-        locale: Locale = Locale.getDefault()
+        locale: Locale = Locale.getDefault(Locale.Category.FORMAT)
     ): String {
         val sb = StringBuilder()
         sb.appendLine("📡 " + texts.headerFmt.format(locale, result.observerLabel))
