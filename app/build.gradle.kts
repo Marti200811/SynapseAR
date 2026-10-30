@@ -79,6 +79,13 @@ android {
     }
 }
 
+// RemoteShareRecursosTest lee los strings.xml reales en tiempo de ejecución, y Gradle no
+// lo sabe: sin esta entrada declarada, editar un string deja la tarea UP-TO-DATE y el
+// test NO corre. Un test que no corre en silencio es peor que no tenerlo.
+tasks.withType<Test>().configureEach {
+    inputs.dir("src/main/res").withPropertyName("resLeidosPorLosTests")
+}
+
 secrets {
     propertiesFileName = "local.properties"
     defaultPropertiesFileName = "local.defaults.properties"
