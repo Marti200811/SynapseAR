@@ -141,4 +141,21 @@
     <string name="moon_waning_gibbous">Gibosa menguante</string>
     <string name="moon_last_quarter">Cuarto menguante</string>
     <string name="moon_waning_crescent">Menguante</string>
+    <!-- Consulta remota: orientar una antena que está en otro lugar -->
+    <string name="consulta_cta">📡 Calcular para acá</string>
+    <string name="consulta_title">Orientar antena a distancia</string>
+    <string name="consulta_pick_satellite">Elegir satélite</string>
+    <string name="consulta_share">Compartir</string>
+    <string name="consulta_no_satellite">Elegí un satélite para ver la orientación</string>
+    <string name="consulta_declination">Declinación en ese lugar: %1$s°</string>
+    <string name="consulta_share_header">Orientación de antena — %1$s</string>
+    <string name="consulta_share_target">Satélite: %1$s</string>
+    <string name="consulta_share_azimuth">Azimut: %1$s° (norte verdadero)</string>
+    <string name="consulta_share_magnetic">Con brújula común: %1$s°</string>
+    <string name="consulta_share_elevation">Elevación: %1$s°</string>
+    <string name="consulta_share_not_visible">Desde ese lugar no se ve %1$s. Hay que elegir otro satélite.</string>
+    <string name="consulta_share_tips_header">Antes de medir:</string>
+    <string name="consulta_share_tip_calibration">Calibrá la brújula: movelo describiendo un 8 en el aire durante 5-10 segundos.</string>
+    <string name="consulta_share_tip_metal">Medí parado a 2-3 metros de la antena, NO apoyado en el caño: el metal desvía la brújula del celular.</string>
+    <string name="consulta_share_tip_elevation">La elevación es la inclinación del plato hacia arriba.</string>
 </resources>

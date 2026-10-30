@@ -141,4 +141,21 @@
     <string name="moon_waning_gibbous">Gibosa minguante</string>
     <string name="moon_last_quarter">Quarto minguante</string>
     <string name="moon_waning_crescent">Minguante</string>
+    <!-- Consulta remota: orientar uma antena que está em outro lugar -->
+    <string name="consulta_cta">📡 Calcular para cá</string>
+    <string name="consulta_title">Orientar antena à distância</string>
+    <string name="consulta_pick_satellite">Escolher satélite</string>
+    <string name="consulta_share">Compartilhar</string>
+    <string name="consulta_no_satellite">Escolha um satélite para ver a orientação</string>
+    <string name="consulta_declination">Declinação nesse lugar: %1$s°</string>
+    <string name="consulta_share_header">Orientação de antena — %1$s</string>
+    <string name="consulta_share_target">Satélite: %1$s</string>
+    <string name="consulta_share_azimuth">Azimute: %1$s° (norte verdadeiro)</string>
+    <string name="consulta_share_magnetic">Com bússola comum: %1$s°</string>
+    <string name="consulta_share_elevation">Elevação: %1$s°</string>
+    <string name="consulta_share_not_visible">De lá não se vê %1$s. Escolha outro satélite.</string>
+    <string name="consulta_share_tips_header">Antes de medir:</string>
+    <string name="consulta_share_tip_calibration">Calibre a bússola: mova o celular descrevendo um 8 no ar por 5 a 10 segundos.</string>
+    <string name="consulta_share_tip_metal">Meça a 2-3 metros da antena, NÃO encostado no mastro: o metal desvia a bússola do celular.</string>
+    <string name="consulta_share_tip_elevation">A elevação é a inclinação do prato para cima.</string>
 </resources>
