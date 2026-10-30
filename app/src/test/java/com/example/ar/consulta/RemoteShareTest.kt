@@ -91,8 +91,10 @@ class RemoteShareTest {
 
     // ── Separador decimal ─────────────────────────────────────────────────
     // Decisión del proyecto: el separador es el del teléfono, para que el mensaje
-    // diga lo mismo que la pantalla ("61,0°O" en un teléfono en español). Estos tres
-    // tests se ponen rojos si alguien cablea Locale.US adentro de build().
+    // diga lo mismo que la pantalla ("61,0°O" en un teléfono en español). Si alguien
+    // cablea Locale.US adentro de build(), se ponen rojos DOS de estos tres tests: el de
+    // es-AR y el de "sin locale explícito". El de Locale.US es el control: seguiría verde,
+    // porque US es justamente lo que espera.
 
     private val esAR: Locale = Locale.forLanguageTag("es-AR")
 

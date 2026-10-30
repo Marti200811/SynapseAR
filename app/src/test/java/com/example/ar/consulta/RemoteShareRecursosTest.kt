@@ -238,6 +238,41 @@ class RemoteShareRecursosTest {
     }
 
     @Test
+    fun `el tip del metal conserva la distancia y la negacion en mayusculas en cada idioma`() {
+        // El spec llama a esta advertencia "la indicación que más desalineaciones evita en
+        // la práctica", y es la que casi nadie sabe: apoyarse en el caño le desvía la
+        // brújula al celular. Se fija solo lo que no cambia con la redacción (la distancia
+        // y la negación en mayúsculas), no el texto completo, para no volver frágil el
+        // test ante un retoque de estilo. La negación es la que está en cada idioma.
+        val negacionPorCarpeta = mapOf(
+            "values" to "NO",
+            "values-en" to "NOT",
+            "values-pt" to "NÃO"
+        )
+
+        for (carpeta in carpetas) {
+            val tip = textos(carpeta).tipMetal
+            val negacion = negacionPorCarpeta.getValue(carpeta)
+
+            assertTrue(
+                "$carpeta: el tip del metal perdió la distancia '2-3'. Sin ella el cliente no " +
+                    "sabe a cuánto de la antena medir. Texto actual: $tip",
+                tip.contains("2-3")
+            )
+
+            // Palabra suelta en mayúsculas: "NO" no puede darse por buena porque aparezca
+            // dentro de "NOT", ni "NOT" dentro de otra palabra.
+            val negacionEnMayusculas = Regex("(?<!\\p{L})${Regex.escape(negacion)}(?!\\p{L})")
+            assertTrue(
+                "$carpeta: el tip del metal perdió la negación '$negacion' en mayúsculas. Sin " +
+                    "esa advertencia el cliente se apoya en el caño, el metal le desvía la " +
+                    "brújula y la antena queda desalineada. Texto actual: $tip",
+                negacionEnMayusculas.containsMatchIn(tip)
+            )
+        }
+    }
+
+    @Test
     fun `los marcadores de cada clave coinciden en los tres idiomas`() {
         val marcador = Regex("%([0-9]+[\$])?[a-zA-Z]")
         val porIdioma = carpetas.associateWith { leerStrings(it) }
