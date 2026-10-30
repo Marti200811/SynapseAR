@@ -61,15 +61,20 @@ class RemoteShareTest {
     @Test
     fun `redondea el azimut a grados enteros`() {
         // Una brújula de mano no resuelve decimales: 355, no 355.396.
+        // Se asertan líneas COMPLETAS, no subcadenas: con `contains("355°")` un
+        // mensaje que intercambia verdadero y magnético sigue pareciendo correcto
+        // (las dos cifras aparecen igual) y el cliente apunta 10° afuera.
         val msg = RemoteShare.build(visible(), textos, Locale.US)
-        assertTrue("falta el azimut verdadero", msg.contains("355°"))
+        assertTrue("falta el azimut verdadero (línea completa)",
+            msg.lines().contains("Azimut: 355° (norte verdadero)"))
         assertFalse("no debería traer decimales en el azimut", msg.contains("355.4"))
     }
 
     @Test
     fun `incluye el azimut magnetico`() {
         val msg = RemoteShare.build(visible(), textos, Locale.US)
-        assertTrue("falta el magnético", msg.contains("6°"))
+        assertTrue("falta el magnético (línea completa)",
+            msg.lines().contains("Con brújula común: 6°"))
     }
 
     @Test
@@ -91,6 +96,8 @@ class RemoteShareTest {
         val msg = RemoteShare.build(noVisible(), textos, Locale.US)
         assertTrue(msg.contains("Desde ese lugar no se ve Amazonas 3 (61.0°O)."))
         assertFalse("no puede mostrar un azimut de un satélite que no se ve", msg.contains("355°"))
+        assertFalse("no puede mostrar el azimut magnético", msg.contains("6°"))
+        assertFalse("no puede mostrar el rótulo del magnético", msg.contains("Con brújula"))
         assertFalse("no puede mostrar una elevación negativa", msg.contains("-51"))
     }
 }
