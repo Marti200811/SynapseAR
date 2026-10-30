@@ -156,6 +156,6 @@
     <string name="consulta_share_not_visible">%1$s is below the horizon from there. Pick another satellite.</string>
     <string name="consulta_share_tips_header">Before you measure:</string>
     <string name="consulta_share_tip_calibration">Calibrate the compass: move the phone in a figure-8 pattern in the air for 5–10 seconds.</string>
-    <string name="consulta_share_tip_metal">Stand 2-3 metres away from the antenna, NOT against the mast: metal throws the phone compass off.</string>
+    <string name="consulta_share_tip_metal">Stand 2-3 meters away from the antenna, NOT against the mast: metal throws the phone compass off.</string>
     <string name="consulta_share_tip_elevation">Elevation is how far the dish tilts upward.</string>
 </resources>

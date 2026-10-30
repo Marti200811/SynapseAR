@@ -155,7 +155,7 @@
     <string name="consulta_share_elevation">Elevación: %1$s°</string>
     <string name="consulta_share_not_visible">Desde ese lugar no se ve %1$s. Hay que elegir otro satélite.</string>
     <string name="consulta_share_tips_header">Antes de medir:</string>
-    <string name="consulta_share_tip_calibration">Calibrá la brújula: movelo describiendo un 8 en el aire durante 5-10 segundos.</string>
+    <string name="consulta_share_tip_calibration">Calibrá la brújula: mové el teléfono describiendo un 8 en el aire durante 5-10 segundos.</string>
     <string name="consulta_share_tip_metal">Medí parado a 2-3 metros de la antena, NO apoyado en el caño: el metal desvía la brújula del celular.</string>
     <string name="consulta_share_tip_elevation">La elevación es la inclinación del plato hacia arriba.</string>
 </resources>
