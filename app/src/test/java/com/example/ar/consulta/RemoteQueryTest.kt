@@ -102,6 +102,19 @@ class RemoteQueryTest {
         assertTrue("la elevación tiene que ser negativa", r.elevationDeg < 0.0)
     }
 
+    @Test
+    fun `el azimut magnetico del resultado sale de aplicar la declinacion al verdadero`() {
+        // Buenos Aires hacia Amazonas 3 con declinación -10.3°: verdadero 355.396°,
+        // magnético 5.696°. Con declinación cero los dos campos coinciden y ningún
+        // test lo notaría, así que este caso usa una declinación real.
+        val r = RemoteQuery.satellite(
+            ObserverPoint(-34.6037, -58.3816, "Buenos Aires"), amazonas3,
+            declinationDeg = -10.3
+        )
+        assertEquals(355.396, r.azimuthTrueDeg, 0.001)
+        assertEquals(5.696, r.azimuthMagneticDeg, 0.001)
+    }
+
     // ── El resultado arrastra los datos de contexto ───────────────────────
 
     @Test
