@@ -9,8 +9,9 @@ import java.util.Locale
 
 class RemoteShareTest {
 
-    // Plantillas equivalentes a los strings de recursos. Se pasan literales para
-    // que el test no dependa de Android ni del idioma del equipo.
+    // Plantillas simplificadas a propósito; NO son los strings reales (ver
+    // RemoteShareRecursosTest, que lee los strings.xml de verdad). Sirven para probar
+    // la lógica de armado (orden, redondeo, separador) sin depender del texto final.
     private val textos = RemoteShare.Texts(
         headerFmt      = "Orientación de antena — %s",
         targetFmt      = "Satélite: %s",
