@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    NestedScrollView y no ScrollView: dentro de un BottomSheet, BottomSheetBehavior solo
+    entrega el gesto vertical a un hijo con scroll anidado habilitado, y el ScrollView de la
+    plataforma lo trae apagado. Con la letra agrandada (el equipo de prueba usa font_scale
+    1.3) el contenido puede pasar el alto de la pantalla; con un ScrollView la hoja se
+    llevaría el arrastre y el botón "Compartir" quedaría fuera de alcance.
+-->
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/bg_deep">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/consulta_title"
+            android:textColor="@color/accent_cyan"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvConsultaPlace"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Los botones van con wrap_content + minHeight y los insets de MaterialButton
+             anulados: es la misma corrección que hubo que hacer en dialog_upgrade.xml.
+             Con font_scale 1.3 y alto fijo el texto se recorta. -->
+        <Button
+            android:id="@+id/btnConsultaSatellite"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="@string/consulta_pick_satellite"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:id="@+id/tvConsultaResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/consulta_no_satellite"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:lineSpacingMultiplier="1.2"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:id="@+id/tvConsultaDeclination"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Arranca oculto y solo se muestra con un satélite que se ve desde ese lugar
+             (ver ConsultaFicha.canShare). -->
+        <Button
+            android:id="@+id/btnConsultaShare"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="52dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="@string/consulta_share"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/bg_deep"
+            android:backgroundTint="@color/accent_cyan"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
