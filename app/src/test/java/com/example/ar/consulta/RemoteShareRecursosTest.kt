@@ -34,7 +34,8 @@ class RemoteShareRecursosTest {
         "consulta_share_tips_header",
         "consulta_share_tip_calibration",
         "consulta_share_tip_metal",
-        "consulta_share_tip_elevation"
+        "consulta_share_tip_elevation",
+        "consulta_declination"
     )
 
     // Los números van con Locale.US explícito: nada depende de la PC.
@@ -133,7 +134,7 @@ class RemoteShareRecursosTest {
     // ── Tests ──────────────────────────────────────────────────────────────
 
     @Test
-    fun `los diez strings existen y no estan vacios en los tres idiomas`() {
+    fun `los once strings existen y no estan vacios en los tres idiomas`() {
         for (carpeta in carpetas) {
             val s = leerStrings(carpeta)
             for (nombre in claves) {

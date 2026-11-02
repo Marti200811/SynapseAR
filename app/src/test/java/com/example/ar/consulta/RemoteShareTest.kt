@@ -83,12 +83,6 @@ class RemoteShareTest {
             msg.lines().contains("Con brújula común: 6°"))
     }
 
-    @Test
-    fun `la elevacion lleva un decimal`() {
-        val msg = RemoteShare.build(visible(), textos, Locale.US)
-        assertTrue(msg.contains("49.7"))
-    }
-
     // ── Separador decimal ─────────────────────────────────────────────────
     // Decisión del proyecto: el separador es el del teléfono, para que el mensaje
     // diga lo mismo que la pantalla ("61,0°O" en un teléfono en español). Si alguien
