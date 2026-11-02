@@ -25,7 +25,11 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.fragment.findNavController
 import com.example.ar.SearchHistoryManager
 import com.example.ar.sensors.OrientationManager
 import com.example.ar.R
@@ -151,13 +155,15 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
         sharedViewModel.consultaObserver.observe(viewLifecycleOwner) { refreshConsultaButton() }
         btnConsulta.setOnClickListener {
             val obs = sharedViewModel.consultaObserver.value ?: return@setOnClickListener
-            // childFragmentManager y no parentFragmentManager: así la hoja muere al salir
-            // de la pestaña Mapa. El findFragmentByTag evita dos hojas con un doble toque.
+            // childFragmentManager y no parentFragmentManager: la hoja es parte de la pestaña
+            // Mapa y se cierra al salir de ella (ver cerrarHojaAlSalirDelMapa, abajo).
+            // El findFragmentByTag evita dos hojas con un doble toque.
             if (childFragmentManager.findFragmentByTag(RemoteSheet.TAG) == null) {
                 RemoteSheet.newInstance(obs)
                     .show(childFragmentManager, RemoteSheet.TAG)
             }
         }
+        cerrarHojaAlSalirDelMapa()
 
         // Cambia el color del indicador a rojo cuando el usuario está alineado con el objetivo
         sharedViewModel.isAligned.observe(viewLifecycleOwner) { aligned ->
@@ -526,6 +532,45 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
             sharedViewModel.consultaObserver.value, sharedViewModel.target.value
         )
         btnConsulta.visibility = if (visible) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Cierra la hoja de consulta apenas el destino deja de ser el Mapa.
+     *
+     * Hace falta porque `bottomNav.setupWithNavController` guarda y restaura cada pestaña
+     * con TODO su `childFragmentManager`. Sin esto, la hoja reaparecería sola (con el
+     * resultado en blanco) al volver al Mapa, y peor: el SatellitePickerDialog que vive
+     * dentro de la hoja no tiene constructor vacío, así que restaurarlo lanza
+     * Fragment.InstantiationException y la app se cierra. Al cerrar la hoja se va también
+     * el selector que lleva adentro.
+     *
+     * Es `dismissNow()` y no `dismiss()` a propósito: FragmentNavigator encola la transacción
+     * que salva la pestaña ANTES de que NavController avise del cambio, así que un dismiss
+     * normal quedaría segundo en la fila y el estado se salvaría con la hoja todavía adentro.
+     * dismissNow() corre sincrónico, antes de ese guardado. Tira IllegalStateException si el
+     * estado ya se salvó, de ahí la guarda.
+     *
+     * NO va en onPause(): onPause también se dispara cuando arranca el anuncio recompensado,
+     * y cerrar la hoja ahí mataría el flujo de desbloquear un satélite Pro mirando un anuncio.
+     *
+     * El listener se saca cuando se destruye la vista, para no filtrarlo.
+     */
+    private fun cerrarHojaAlSalirDelMapa() {
+        val navController = findNavController()
+        val listener = NavController.OnDestinationChangedListener { _, destino, _ ->
+            if (destino.id != R.id.mapFragment) {
+                val hoja = childFragmentManager.findFragmentByTag(RemoteSheet.TAG) as? RemoteSheet
+                    ?: return@OnDestinationChangedListener
+                if (childFragmentManager.isStateSaved) hoja.dismissAllowingStateLoss()
+                else hoja.dismissNow()
+            }
+        }
+        navController.addOnDestinationChangedListener(listener)
+        viewLifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                navController.removeOnDestinationChangedListener(listener)
+            }
+        })
     }
 
     private fun updateInfoPanel(target: TargetPoint?) {

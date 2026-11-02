@@ -26,8 +26,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
  * que pueda desincronizarse con la brújula o el AR, que siguen usando el GPS real.
  *
  * Para quien la abre (MapFragment): crearla con [newInstance] (le pasa el [ObserverPoint]
- * entero, no lat/lon sueltos), mostrarla con su `childFragmentManager` y con [TAG]. Así la
- * hoja muere junto con la pestaña Mapa y se puede evitar abrir dos.
+ * entero, no lat/lon sueltos), mostrarla con su `childFragmentManager` y con [TAG]. Así se
+ * puede evitar abrir dos. Ojo: que muera junto con la pestaña Mapa NO es automático.
+ * Navigation guarda y restaura el `childFragmentManager` de cada pestaña, así que
+ * MapFragment la cierra por su cuenta al cambiar de destino (cerrarHojaAlSalirDelMapa).
  * `label` no debe venir vacío: es lo que lee el cliente en el encabezado del mensaje.
  *
  * Lo que se puede probar sin Android (cuándo se comparte, la declinación, los textos)
