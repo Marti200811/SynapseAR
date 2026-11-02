@@ -13,6 +13,7 @@ class RemoteQueryTest {
 
     private val amazonas3 = Satellite("Amazonas 3", -61.0, "Sudamérica", "TV / Internet")
     private val satLejano = Satellite("Lejano", 150.0, "Pacífico", "TV")
+    private val apstar9 = Satellite("Apstar 9 (142°E)", 142.0, "Asia / Pacífico", "TV")
 
     // positionLabel usa "%.1f", que toma el separador decimal del sistema: en una
     // PC con coma decimal sale "61,0°O" y el test fallaba solo ahí. Fijamos el
@@ -126,5 +127,17 @@ class RemoteQueryTest {
         assertEquals("Av. San Martín 1842", r.observerLabel)
         assertEquals("Amazonas 3 (61.0°O)", r.targetLabel)
         assertEquals(-10.3, r.declinationDeg, 0.0001)
+    }
+
+    @Test
+    fun `un satelite con la posicion en el nombre no la repite en la etiqueta`() {
+        // Antes la etiqueta se armaba concatenando, y 27 de los 70 nombres del DB ya
+        // traen la posición adentro: el mensaje decía "Apstar 9 (142°E) (142.0°E)".
+        // Acá se verifica el cableado a etiquetaSatelite, no la función sola
+        // (eso está en SatelliteEtiquetaTest).
+        val r = RemoteQuery.satellite(
+            ObserverPoint(-34.6037, -58.3816, "Buenos Aires"), apstar9, declinationDeg = -10.3
+        )
+        assertEquals("Apstar 9 (142.0°E)", r.targetLabel)
     }
 }

@@ -36,7 +36,7 @@ object RemoteQuery {
         )
         return RemoteResult(
             observerLabel      = observer.label,
-            targetLabel        = "${satellite.name} (${satellite.positionLabel})",
+            targetLabel        = etiquetaSatelite(satellite.name, satellite.positionLabel),
             azimuthTrueDeg     = angles.azimuthDeg,
             azimuthMagneticDeg = toMagnetic(angles.azimuthDeg, declinationDeg),
             elevationDeg       = angles.elevationDeg,
