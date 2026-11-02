@@ -17,6 +17,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
@@ -31,6 +32,8 @@ import com.example.ar.R
 import com.example.ar.SettingsDialog
 import com.example.ar.SharedViewModel
 import com.example.ar.TargetPoint
+import com.example.ar.consulta.ConsultaEntrada
+import com.example.ar.consulta.RemoteSheet
 import com.example.ar.util.GeoUtils
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -70,6 +73,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
     private lateinit var tvTarget: TextView
     private lateinit var etSearch: EditText
     private lateinit var btnSearch: ImageButton
+    private lateinit var btnConsulta: Button
 
     // Estado de ubicación y apuntamiento
     private var userLatLng: LatLng? = null
@@ -106,6 +110,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
         tvTarget   = view.findViewById(R.id.mapTxtTarget)
         etSearch   = view.findViewById(R.id.etSearch)
         btnSearch  = view.findViewById(R.id.btnSearch)
+        btnConsulta = view.findViewById(R.id.btnConsultaRemota)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         orientationManager  = OrientationManager(requireContext()).also { it.listener = this }
@@ -137,6 +142,21 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
             updateInfoPanel(target)
             userLatLng?.let { user -> target?.let { t -> drawAimingIndicator(user, t) } }
                 ?: run { clearAimingOverlays() }
+        }
+
+        // Consulta remota: el botón vive solo mientras el objetivo sea el punto elegido en
+        // ESTE mapa (ver ConsultaEntrada.isButtonVisible). Se reevalúa con cualquiera de
+        // los dos, porque la Brújula puede cambiar `target` por una torre o un waypoint.
+        sharedViewModel.target.observe(viewLifecycleOwner) { refreshConsultaButton() }
+        sharedViewModel.consultaObserver.observe(viewLifecycleOwner) { refreshConsultaButton() }
+        btnConsulta.setOnClickListener {
+            val obs = sharedViewModel.consultaObserver.value ?: return@setOnClickListener
+            // childFragmentManager y no parentFragmentManager: así la hoja muere al salir
+            // de la pestaña Mapa. El findFragmentByTag evita dos hojas con un doble toque.
+            if (childFragmentManager.findFragmentByTag(RemoteSheet.TAG) == null) {
+                RemoteSheet.newInstance(obs.lat, obs.lon, obs.label)
+                    .show(childFragmentManager, RemoteSheet.TAG)
+            }
         }
 
         // Cambia el color del indicador a rojo cuando el usuario está alineado con el objetivo
@@ -272,6 +292,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
             .setItems(labels) { _, idx ->
                 val e = entries[idx]
                 val target = com.example.ar.TargetPoint(e.lat, e.lon, e.name)
+                // El historial solo lo llena este mapa (búsqueda y toque): es un punto del mapa.
+                sharedViewModel.consultaObserver.value = ConsultaEntrada.observerFor(e.lat, e.lon, e.name)
                 sharedViewModel.target.value = target
                 googleMap?.let { map ->
                     targetMarker?.remove()
@@ -409,6 +431,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
                         val latLng = LatLng(addr.latitude, addr.longitude)
                         val name   = addr.getAddressLine(0) ?: query
 
+                        sharedViewModel.consultaObserver.value =
+                            ConsultaEntrada.observerFor(addr.latitude, addr.longitude, name)
                         sharedViewModel.target.value = TargetPoint(addr.latitude, addr.longitude, name)
 
                         // Guardar en historial de búsquedas
@@ -464,6 +488,10 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
         map.setOnMapClickListener { latLng ->
             val name = "%.4f°, %.4f°".format(latLng.latitude, latLng.longitude)
             val target = TargetPoint(latLng.latitude, latLng.longitude, name)
+            // Sin nombre: un punto tocado no tiene dirección, y la etiqueta sale con las
+            // coordenadas separadas por " / " en vez del "a, b" de `name`.
+            sharedViewModel.consultaObserver.value =
+                ConsultaEntrada.observerFor(latLng.latitude, latLng.longitude, "")
             sharedViewModel.target.value = target
             SearchHistoryManager.add(requireContext(),
                 SearchHistoryManager.Entry(name, latLng.latitude, latLng.longitude)
@@ -492,6 +520,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
     }
 
     // ── Panel de info ────────────────────────────────────────────────────────
+
+    private fun refreshConsultaButton() {
+        val visible = ConsultaEntrada.isButtonVisible(
+            sharedViewModel.consultaObserver.value, sharedViewModel.target.value
+        )
+        btnConsulta.visibility = if (visible) View.VISIBLE else View.GONE
+    }
 
     private fun updateInfoPanel(target: TargetPoint?) {
         if (target == null) {
