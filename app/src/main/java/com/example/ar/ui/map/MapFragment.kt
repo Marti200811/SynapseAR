@@ -154,7 +154,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
             // childFragmentManager y no parentFragmentManager: así la hoja muere al salir
             // de la pestaña Mapa. El findFragmentByTag evita dos hojas con un doble toque.
             if (childFragmentManager.findFragmentByTag(RemoteSheet.TAG) == null) {
-                RemoteSheet.newInstance(obs.lat, obs.lon, obs.label)
+                RemoteSheet.newInstance(obs)
                     .show(childFragmentManager, RemoteSheet.TAG)
             }
         }

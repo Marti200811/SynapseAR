@@ -25,8 +25,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
  * el tiempo que esta hoja está abierta: al cerrarla no queda estado dando vueltas
  * que pueda desincronizarse con la brújula o el AR, que siguen usando el GPS real.
  *
- * Para quien la abre (MapFragment): mostrarla con su `childFragmentManager` y con
- * [TAG]. Así la hoja muere junto con la pestaña Mapa y se puede evitar abrir dos.
+ * Para quien la abre (MapFragment): crearla con [newInstance] (le pasa el [ObserverPoint]
+ * entero, no lat/lon sueltos), mostrarla con su `childFragmentManager` y con [TAG]. Así la
+ * hoja muere junto con la pestaña Mapa y se puede evitar abrir dos.
  * `label` no debe venir vacío: es lo que lee el cliente en el encabezado del mensaje.
  *
  * Lo que se puede probar sin Android (cuándo se comparte, la declinación, los textos)
@@ -42,11 +43,15 @@ class RemoteSheet : BottomSheetDialogFragment() {
         private const val ARG_LON = "lon"
         private const val ARG_LABEL = "label"
 
-        fun newInstance(lat: Double, lon: Double, label: String) = RemoteSheet().apply {
+        // Recibe el ObserverPoint entero y no (lat, lon, label) sueltos: dos Double
+        // posicionales se pueden intercambiar sin que nada se queje (compila, los tests
+        // pasan y el azimut sale creíble, pero para un punto en el mar). Acá el único cruce
+        // posible quedaría dentro de estas líneas y de onViewCreated, que se leen juntas.
+        fun newInstance(punto: ObserverPoint) = RemoteSheet().apply {
             arguments = Bundle().apply {
-                putDouble(ARG_LAT, lat)
-                putDouble(ARG_LON, lon)
-                putString(ARG_LABEL, label)
+                putDouble(ARG_LAT, punto.lat)
+                putDouble(ARG_LON, punto.lon)
+                putString(ARG_LABEL, punto.label)
             }
         }
     }
