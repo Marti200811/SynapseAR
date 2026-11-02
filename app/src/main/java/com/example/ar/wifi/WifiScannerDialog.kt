@@ -12,14 +12,60 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ar.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class WifiScannerDialog(
-    private val onSelected: (WifiNetwork) -> Unit
-) : DialogFragment(), WifiScanner.Listener {
+/**
+ * Escáner de redes WiFi: lista lo que se ve alrededor y devuelve la que se elige.
+ *
+ * Constructor sin parámetros a propósito: al recrear la Activity (tamaño de letra, tema,
+ * idioma) `FragmentFactory` reinstancia los diálogos abiertos con el constructor vacío, y
+ * si no existe tira `Fragment$InstantiationException`. La red elegida sale por
+ * `setFragmentResult` con [RESULT_KEY]; quien escucha registra el listener en
+ * `onViewCreated`, nunca dentro del `setOnClickListener`.
+ */
+class WifiScannerDialog : DialogFragment(), WifiScanner.Listener {
+
+    companion object {
+        /** Clave del resultado. Quien escucha lee el Bundle con [wifiNetworkFromResult]. */
+        const val RESULT_KEY = "wifi_scanner_result"
+
+        private const val RESULT_SSID = "ssid"
+        private const val RESULT_BSSID = "bssid"
+        private const val RESULT_RSSI = "rssi"
+        private const val RESULT_FREQUENCY = "frequency"
+
+        /**
+         * No recibe nada todavía, pero se crea igual por acá: así los nueve call sites de
+         * diálogos se leen iguales y, si algún día necesita un argumento, hay un solo lugar
+         * donde ponerlo.
+         */
+        fun newInstance() = WifiScannerDialog()
+
+        /**
+         * Rearma la [WifiNetwork] que viajó en el Bundle de [RESULT_KEY].
+         *
+         * Se lee junto con [resultBundle], que es su par: `WifiNetwork` no es `Parcelable`,
+         * así que sus campos viajan sueltos. El resto (banda, canal, distancia estimada) son
+         * propiedades calculadas y salen solas.
+         */
+        fun wifiNetworkFromResult(bundle: Bundle) = WifiNetwork(
+            ssid      = bundle.getString(RESULT_SSID) ?: "",
+            bssid     = bundle.getString(RESULT_BSSID) ?: "",
+            rssi      = bundle.getInt(RESULT_RSSI),
+            frequency = bundle.getInt(RESULT_FREQUENCY)
+        )
+
+        private fun resultBundle(network: WifiNetwork) = Bundle().apply {
+            putString(RESULT_SSID, network.ssid)
+            putString(RESULT_BSSID, network.bssid)
+            putInt(RESULT_RSSI, network.rssi)
+            putInt(RESULT_FREQUENCY, network.frequency)
+        }
+    }
 
     private lateinit var scanner: WifiScanner
     private lateinit var adapter: WifiNetworkAdapter
@@ -34,7 +80,7 @@ class WifiScannerDialog(
 
         adapter = WifiNetworkAdapter { network ->
             scanner.stopScanning()
-            onSelected(network)
+            setFragmentResult(RESULT_KEY, resultBundle(network))
             dismiss()
         }
 

@@ -120,7 +120,7 @@ class ArFragment : Fragment(), OrientationManager.Listener {
         fusedLocation = LocationServices.getFusedLocationProviderClient(requireContext())
 
         binding.btnSunMoon.setOnClickListener {
-            SunMoonDialog(currentLocation).show(parentFragmentManager, "sunmoon")
+            SunMoonDialog.newInstance(currentLocation).show(parentFragmentManager, "sunmoon")
         }
 
         sharedVm.target.observe(viewLifecycleOwner) { updateReadouts() }

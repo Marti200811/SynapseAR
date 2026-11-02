@@ -165,11 +165,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         // Botón tipo de antena
         binding.btnSelectAntenna.setOnClickListener {
             val current = sharedVm.antennaType.value ?: AntennaType.SATELLITE
-            AntennaPickerDialog(current) { type ->
-                sharedVm.antennaType.value = type
-                // Si no es satelital, limpiar satélite seleccionado
-                if (!type.needsElevation) sharedVm.selectedSatellite.value = null
-            }.show(parentFragmentManager, "antenna_picker")
+            AntennaPickerDialog.newInstance(current).show(parentFragmentManager, "antenna_picker")
         }
 
         // Botón selector de satélite
@@ -178,18 +174,16 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             when (sharedVm.antennaType.value) {
                 AntennaType.WIFI_DIRECTIONAL -> {
                     if (AccessManager.canUse(requireContext(), Feature.WIFI_SCANNER)) {
-                        WifiScannerDialog { network ->
-                            sharedVm.trackedWifi.value = network
-                        }.show(parentFragmentManager, "wifi_scanner")
+                        WifiScannerDialog.newInstance()
+                            .show(parentFragmentManager, "wifi_scanner")
                     } else {
                         (requireActivity() as MainActivity).showUpgradeDialog(
                             source = Analytics.SRC_WIFI_SCANNER,
                             feature = Feature.WIFI_SCANNER,
                             onUnlocked = {
                                 if (isAdded) {
-                                    WifiScannerDialog { network ->
-                                        sharedVm.trackedWifi.value = network
-                                    }.show(parentFragmentManager, "wifi_scanner")
+                                    WifiScannerDialog.newInstance()
+                                        .show(parentFragmentManager, "wifi_scanner")
                                 }
                             }
                         )
@@ -339,6 +333,17 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         setFragmentResultListener(SatellitePickerDialog.RESULT_KEY) { _, bundle ->
             sharedVm.selectedSatellite.value = SatellitePickerDialog.satelliteFromResult(bundle)
             sharedVm.antennaType.value = AntennaType.SATELLITE
+        }
+
+        setFragmentResultListener(AntennaPickerDialog.RESULT_KEY) { _, bundle ->
+            val type = AntennaPickerDialog.antennaTypeFromResult(bundle) ?: return@setFragmentResultListener
+            sharedVm.antennaType.value = type
+            // Si no es satelital, limpiar satélite seleccionado
+            if (!type.needsElevation) sharedVm.selectedSatellite.value = null
+        }
+
+        setFragmentResultListener(WifiScannerDialog.RESULT_KEY) { _, bundle ->
+            sharedVm.trackedWifi.value = WifiScannerDialog.wifiNetworkFromResult(bundle)
         }
     }
 

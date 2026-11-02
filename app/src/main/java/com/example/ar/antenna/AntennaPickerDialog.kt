@@ -7,15 +7,41 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ar.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class AntennaPickerDialog(
-    private val current: AntennaType,
-    private val onSelected: (AntennaType) -> Unit
-) : DialogFragment() {
+/**
+ * Selector del tipo de antena.
+ *
+ * Constructor sin parámetros a propósito: al recrear la Activity (tamaño de letra, tema,
+ * idioma) `FragmentFactory` reinstancia los diálogos abiertos con el constructor vacío, y
+ * si no existe tira `Fragment$InstantiationException`. Los datos entran por [newInstance]
+ * y el tipo elegido sale por `setFragmentResult` con [RESULT_KEY]; quien escucha registra
+ * el listener en `onViewCreated`, nunca dentro del `setOnClickListener`.
+ */
+class AntennaPickerDialog : DialogFragment() {
+
+    companion object {
+        /** Clave del resultado. Quien escucha lee el Bundle con [antennaTypeFromResult]. */
+        const val RESULT_KEY = "antenna_picker_result"
+
+        private const val ARG_CURRENT = "current"
+        private const val RESULT_TYPE = "type"
+
+        /** @param current El tipo que ya está elegido, el que lleva el tilde en la lista. */
+        fun newInstance(current: AntennaType) = AntennaPickerDialog().apply {
+            // El enum viaja por name() y no por ordinal: reordenar AntennaType no puede
+            // convertir un tipo en otro.
+            arguments = Bundle().apply { putString(ARG_CURRENT, current.name) }
+        }
+
+        /** Lee el tipo elegido del Bundle que entrega [RESULT_KEY]. */
+        fun antennaTypeFromResult(bundle: Bundle): AntennaType? =
+            bundle.getString(RESULT_TYPE)?.let { AntennaType.valueOf(it) }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val inflater = LayoutInflater.from(requireContext())
@@ -24,9 +50,15 @@ class AntennaPickerDialog(
         val view = inflater.inflate(R.layout.dialog_antenna_picker, null)
         val rv   = view.findViewById<RecyclerView>(R.id.rvAntennaTypes)
 
+        // Mismo valor por defecto que usa quien lo abre cuando el ViewModel todavía no
+        // tiene tipo: solo decide dónde va el tilde.
+        val current = arguments?.getString(ARG_CURRENT)
+            ?.let { AntennaType.valueOf(it) }
+            ?: AntennaType.SATELLITE
+
         rv.layoutManager = LinearLayoutManager(requireContext())
         rv.adapter = AntennaAdapter(AntennaType.entries, current) { type ->
-            onSelected(type)
+            setFragmentResult(RESULT_KEY, Bundle().apply { putString(RESULT_TYPE, type.name) })
             dismiss()
         }
 

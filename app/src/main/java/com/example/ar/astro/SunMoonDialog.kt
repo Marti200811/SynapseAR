@@ -3,6 +3,7 @@ package com.example.ar.astro
 import android.app.Dialog
 import android.location.Location
 import android.os.Bundle
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import com.example.ar.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -10,13 +11,33 @@ import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
 
-/** Horarios de sol y luna, y cuánta luz de día queda, para el lugar donde estás. */
-class SunMoonDialog(private val location: Location?) : DialogFragment() {
+/**
+ * Horarios de sol y luna, y cuánta luz de día queda, para el lugar donde estás.
+ *
+ * Constructor sin parámetros a propósito: al recrear la Activity (tamaño de letra, tema,
+ * idioma) `FragmentFactory` reinstancia los diálogos abiertos con el constructor vacío, y
+ * si no existe tira `Fragment$InstantiationException`. La ubicación entra por [newInstance].
+ *
+ * No devuelve nada: solo muestra horarios, así que no tiene clave de resultado ni listener.
+ */
+class SunMoonDialog : DialogFragment() {
+
+    companion object {
+        private const val ARG_LOCATION = "location"
+
+        /** @param location Lugar del que se calculan los horarios; sin él, el diálogo avisa que no hay GPS. */
+        fun newInstance(location: Location?) = SunMoonDialog().apply {
+            arguments = Bundle().apply { putParcelable(ARG_LOCATION, location) }
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val builder = MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.sunmoon_title))
             .setPositiveButton(android.R.string.ok, null)
+        val location = arguments?.let {
+            BundleCompat.getParcelable(it, ARG_LOCATION, Location::class.java)
+        }
         val loc = location ?: return builder.setMessage(getString(R.string.sunmoon_no_gps)).create()
 
         val now = System.currentTimeMillis()
