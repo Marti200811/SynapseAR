@@ -10,19 +10,82 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ar.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class TdtPickerDialog(
-    private val location: Location?,
-    private val countryCode: String? = null,
-    private val onSelected: (TdtTransmitter) -> Unit
-) : DialogFragment() {
+/**
+ * Selector de transmisor de TDT.
+ *
+ * Constructor sin parámetros a propósito: al recrear la Activity (tamaño de letra, tema,
+ * idioma) `FragmentFactory` reinstancia los diálogos abiertos con el constructor vacío, y
+ * si no existe tira `Fragment$InstantiationException`. Los datos entran por [newInstance]
+ * y el transmisor elegido sale por `setFragmentResult` con [RESULT_KEY]; quien escucha
+ * registra el listener en `onViewCreated`, nunca dentro del `setOnClickListener`.
+ */
+class TdtPickerDialog : DialogFragment() {
 
     private lateinit var adapter: TdtAdapter
+
+    companion object {
+        /** Clave del resultado. Quien escucha lee el Bundle con [transmitterFromResult]. */
+        const val RESULT_KEY = "tdt_picker_result"
+
+        private const val ARG_LOCATION = "location"
+        private const val ARG_COUNTRY_CODE = "country_code"
+
+        private const val RESULT_NAME = "name"
+        private const val RESULT_CITY = "city"
+        private const val RESULT_COUNTRY = "country"
+        private const val RESULT_STANDARD = "standard"
+        private const val RESULT_LAT = "lat"
+        private const val RESULT_LON = "lon"
+        private const val RESULT_POWER = "power"
+
+        /**
+         * @param location    Desde dónde se mira: ordena por cercanía y muestra la distancia.
+         *                    `Location` es `Parcelable`, así que viaja entero en el Bundle.
+         * @param countryCode ISO 3166-1 del país del usuario, para filtrar el listado.
+         */
+        fun newInstance(location: Location?, countryCode: String? = null) =
+            TdtPickerDialog().apply {
+                arguments = Bundle().apply {
+                    putParcelable(ARG_LOCATION, location)
+                    putString(ARG_COUNTRY_CODE, countryCode)
+                }
+            }
+
+        /**
+         * Rearma el [TdtTransmitter] que viajó en el Bundle de [RESULT_KEY].
+         *
+         * Se lee junto con [resultBundle], que es su par: `TdtTransmitter` no es
+         * `Parcelable`, así que sus campos viajan sueltos. Con una clave con nombre por
+         * campo no hay forma de cruzar lat con lon sin que se vea en estas líneas.
+         */
+        fun transmitterFromResult(bundle: Bundle) = TdtTransmitter(
+            name     = bundle.getString(RESULT_NAME) ?: "",
+            city     = bundle.getString(RESULT_CITY) ?: "",
+            country  = bundle.getString(RESULT_COUNTRY) ?: "",
+            standard = bundle.getString(RESULT_STANDARD) ?: "",
+            lat      = bundle.getDouble(RESULT_LAT),
+            lon      = bundle.getDouble(RESULT_LON),
+            power    = bundle.getDouble(RESULT_POWER)
+        )
+
+        private fun resultBundle(transmitter: TdtTransmitter) = Bundle().apply {
+            putString(RESULT_NAME, transmitter.name)
+            putString(RESULT_CITY, transmitter.city)
+            putString(RESULT_COUNTRY, transmitter.country)
+            putString(RESULT_STANDARD, transmitter.standard)
+            putDouble(RESULT_LAT, transmitter.lat)
+            putDouble(RESULT_LON, transmitter.lon)
+            putDouble(RESULT_POWER, transmitter.power)
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val inflater = LayoutInflater.from(requireContext())
@@ -31,10 +94,17 @@ class TdtPickerDialog(
         val etSearch = view.findViewById<EditText>(R.id.etTdtSearch)
         val rv       = view.findViewById<RecyclerView>(R.id.rvTdtTransmitters)
 
-        val initial = buildInitialList()
+        // Se leen una vez acá y se pasan como parámetros: siguen siendo val, así que el
+        // smart cast de `location != null` adentro de buildInitialList sigue funcionando.
+        val location = arguments?.let {
+            BundleCompat.getParcelable(it, ARG_LOCATION, Location::class.java)
+        }
+        val countryCode = arguments?.getString(ARG_COUNTRY_CODE)
+
+        val initial = buildInitialList(location, countryCode)
 
         adapter = TdtAdapter(initial) { transmitter ->
-            onSelected(transmitter)
+            setFragmentResult(RESULT_KEY, resultBundle(transmitter))
             dismiss()
         }
 
@@ -47,7 +117,7 @@ class TdtPickerDialog(
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString()?.trim() ?: ""
                 val results = if (query.isBlank()) {
-                    buildInitialList()
+                    buildInitialList(location, countryCode)
                 } else {
                     if (countryCode != null) {
                         TdtDatabase.search(query, location?.latitude, location?.longitude)
@@ -66,7 +136,9 @@ class TdtPickerDialog(
             .create()
     }
 
-    private fun buildInitialList(): List<Pair<TdtTransmitter, Double?>> {
+    private fun buildInitialList(
+        location: Location?, countryCode: String?
+    ): List<Pair<TdtTransmitter, Double?>> {
         return when {
             countryCode != null -> {
                 val local = TdtDatabase.byCountry(countryCode, location?.latitude, location?.longitude)

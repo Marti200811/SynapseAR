@@ -192,18 +192,16 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 AntennaType.TDT -> {
                     if (AccessManager.canUse(requireContext(), Feature.TDT_PICKER)) {
                         // Pasar código de país para filtrar por país del usuario
-                        TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
-                            sharedVm.selectedTdt.value = transmitter
-                        }.show(parentFragmentManager, "tdt_picker")
+                        TdtPickerDialog.newInstance(currentLocation, userCountryCode)
+                            .show(parentFragmentManager, "tdt_picker")
                     } else {
                         (requireActivity() as MainActivity).showUpgradeDialog(
                             source = Analytics.SRC_TDT_PICKER,
                             feature = Feature.TDT_PICKER,
                             onUnlocked = {
                                 if (isAdded) {
-                                    TdtPickerDialog(currentLocation, userCountryCode) { transmitter ->
-                                        sharedVm.selectedTdt.value = transmitter
-                                    }.show(parentFragmentManager, "tdt_picker")
+                                    TdtPickerDialog.newInstance(currentLocation, userCountryCode)
+                                        .show(parentFragmentManager, "tdt_picker")
                                 }
                             }
                         )
@@ -235,16 +233,9 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
 
         // Lista de puntos: tocar uno = volver a él
         binding.btnMyPoints.setOnClickListener {
-            WaypointDialog(
+            WaypointDialog.newInstance(
                 location = currentLocation,
-                hasTarget = sharedVm.target.value != null,
-                onGoTo = { w ->
-                    // Un satélite o torre elegidos tienen prioridad sobre el objetivo: se sueltan.
-                    sharedVm.selectedSatellite.value = null
-                    sharedVm.selectedTdt.value = null
-                    sharedVm.target.value = TargetPoint(w.lat, w.lon, "📍 ${w.name}")
-                },
-                onClearTarget = { sharedVm.target.value = null }
+                hasTarget = sharedVm.target.value != null
             ).show(parentFragmentManager, "waypoints")
         }
 
@@ -344,6 +335,24 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
 
         setFragmentResultListener(WifiScannerDialog.RESULT_KEY) { _, bundle ->
             sharedVm.trackedWifi.value = WifiScannerDialog.wifiNetworkFromResult(bundle)
+        }
+
+        setFragmentResultListener(TdtPickerDialog.RESULT_KEY) { _, bundle ->
+            sharedVm.selectedTdt.value = TdtPickerDialog.transmitterFromResult(bundle)
+        }
+
+        // Una sola clave para las dos acciones del diálogo de puntos, con discriminador.
+        setFragmentResultListener(WaypointDialog.RESULT_KEY) { _, bundle ->
+            when (bundle.getString(WaypointDialog.RESULT_ACTION)) {
+                WaypointDialog.ACTION_GO_TO -> {
+                    val w = WaypointDialog.waypointFromResult(bundle) ?: return@setFragmentResultListener
+                    // Un satélite o torre elegidos tienen prioridad sobre el objetivo: se sueltan.
+                    sharedVm.selectedSatellite.value = null
+                    sharedVm.selectedTdt.value = null
+                    sharedVm.target.value = TargetPoint(w.lat, w.lon, "📍 ${w.name}")
+                }
+                WaypointDialog.ACTION_CLEAR_TARGET -> sharedVm.target.value = null
+            }
         }
     }
 

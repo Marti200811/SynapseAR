@@ -539,10 +539,14 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
      *
      * Hace falta porque `bottomNav.setupWithNavController` guarda y restaura cada pestaña
      * con TODO su `childFragmentManager`. Sin esto, la hoja reaparecería sola (con el
-     * resultado en blanco) al volver al Mapa, y peor: el SatellitePickerDialog que vive
-     * dentro de la hoja no tiene constructor vacío, así que restaurarlo lanza
-     * Fragment.InstantiationException y la app se cierra. Al cerrar la hoja se va también
-     * el selector que lleva adentro.
+     * resultado en blanco) al volver al Mapa. Al cerrar la hoja se va también el selector
+     * que lleva adentro.
+     *
+     * Hasta el arreglo de los constructores vacíos esto además tapaba un crash: el
+     * SatellitePickerDialog que vive dentro de la hoja no tenía constructor sin
+     * argumentos y restaurarlo lanzaba Fragment.InstantiationException. Ese camino ya no
+     * revienta (el selector se crea con `newInstance` y devuelve por `setFragmentResult`),
+     * así que lo único que sigue en pie es lo de la hoja en blanco.
      *
      * Es `dismissNow()` y no `dismiss()` a propósito: FragmentNavigator encola la transacción
      * que salva la pestaña ANTES de que NavController avise del cambio, así que un dismiss
