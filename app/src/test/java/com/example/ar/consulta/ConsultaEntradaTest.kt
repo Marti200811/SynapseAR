@@ -102,6 +102,15 @@ class ConsultaEntradaTest {
     }
 
     @Test
+    fun `un TargetPoint sin nombre toma su default y la etiqueta sale con las coordenadas`() {
+        // Sin nombre, el TargetPoint se arma con su propio default (SharedViewModel.kt). Si
+        // ese default cambia o se localiza, esta regla tiene que seguir calzando: por eso el
+        // test no escribe el literal, lee el nombre que trae el objeto.
+        val p = TargetPoint(lat, lon)
+        assertEquals("-34,6037° / -58,3816°", ConsultaEntrada.label(p.name, p.lat, p.lon, esAR))
+    }
+
+    @Test
     fun `con es-AR el separador decimal es coma y la etiqueta sigue siendo legible`() {
         val etiqueta = ConsultaEntrada.label("", lat, lon, esAR)
         // La coma decimal ya está en los números: separar latitud y longitud con otra
@@ -147,6 +156,14 @@ class ConsultaEntradaTest {
         // es justo la forma con coma que no se lee.
         assertEquals("-34,6037° / -58,3816°", ConsultaEntrada.label("-34,6037°, -58,3816°", lat, lon, esAR))
         assertEquals("-34.6037° / -58.3816°", ConsultaEntrada.label("-34.6037°, -58.3816°", lat, lon, Locale.US))
+    }
+
+    @Test
+    fun `un nombre que contiene coordenadas pero tiene mas texto se devuelve tal cual`() {
+        // La regex tiene que calzar el nombre entero (matches), no buscarse adentro. Si se
+        // cambia por find, este nombre se reescribe entero y pierde el "(portón verde)".
+        val nombre = "Casa -34,6037°, -58,3816° (portón verde)"
+        assertEquals(nombre, ConsultaEntrada.label(nombre, lat, lon, esAR))
     }
 
     @Test
