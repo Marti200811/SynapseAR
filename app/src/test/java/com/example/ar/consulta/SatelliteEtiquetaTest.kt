@@ -80,6 +80,18 @@ class SatelliteEtiquetaTest {
     }
 
     @Test
+    fun `un parentesis con la letra pero sin digitos no es una posicion`() {
+        // El único test que fija el `\d+` del patrón. El de NSS-806 no sirve para eso:
+        // ahí lo que salva al nombre es la clase [EWO], que "SES-8" tampoco cumple.
+        // Sin el dígito obligatorio, un paréntesis final con sola letra se comería
+        // parte del nombre comercial.
+        assertEquals(
+            "Eutelsat Quantum (W) (5.0°E)",
+            etiquetaSatelite("Eutelsat Quantum (W)", "5.0°E")
+        )
+    }
+
+    @Test
     fun `solo saca el parentesis final, no uno del medio`() {
         // Lo que se saca es el paréntesis FINAL. Sin el ancla de fin de string se
         // borraría cualquiera que tenga forma de longitud, también en el medio del

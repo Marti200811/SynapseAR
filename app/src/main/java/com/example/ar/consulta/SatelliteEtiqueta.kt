@@ -22,9 +22,13 @@ package com.example.ar.consulta
  * DB: `(19.2°E)`, `(142°E)`, `(4°W)` y `(7W)` — el grado es opcional y la letra puede
  * venir en inglés (`W`) o en español (`O`).
  *
- * Está anclado al final (`$`) y exige dígitos después del paréntesis que abre, para no
- * mutilar `NSS-806 (SES-8)`, donde el paréntesis es otra designación comercial y no
- * una posición.
+ * Tres condiciones acotan el match, y cada una por su cuenta: el ancla de fin de string
+ * (`$`), al menos un dígito (`\d+`) y que la letra sea de `E`/`W`/`O`.
+ *
+ * A `NSS-806 (SES-8)` —donde el paréntesis es otra designación comercial, no una
+ * posición— lo salvan las dos últimas a la vez, así que ese caso NO prueba el `\d+`.
+ * El que lo prueba es un paréntesis final con la letra pero sin dígitos, como
+ * `Eutelsat Quantum (W)`: sin el `\d+` el nombre quedaría mutilado.
  */
 private val PARENTESIS_DE_POSICION = Regex(
     """\s*\(\s*\d+(?:[.,]\d+)?\s*°?\s*[EWO]\s*\)$""",
