@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.*
 import kotlinx.coroutines.Dispatchers
@@ -128,6 +129,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
         }
         fusedLocation = LocationServices.getFusedLocationProviderClient(requireContext())
 
+        escucharResultadosDeLosDialogos()
+
         // Botón configuración ⚙
         binding.btnSettings.setOnClickListener {
             val dialog = SettingsDialog()
@@ -214,10 +217,8 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 }
                 else -> {
                     // Pasar ubicación actual para filtrar por visibilidad desde el hemisferio del usuario
-                    SatellitePickerDialog(currentLocation) { satellite ->
-                        sharedVm.selectedSatellite.value = satellite
-                        sharedVm.antennaType.value = AntennaType.SATELLITE
-                    }.show(parentFragmentManager, "sat_picker")
+                    SatellitePickerDialog.newInstance(currentLocation)
+                        .show(parentFragmentManager, "sat_picker")
                 }
             }
         }
@@ -320,6 +321,25 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
 
         // Observar objetivo de mapa
         sharedVm.target.observe(viewLifecycleOwner) { updateReadouts() }
+    }
+
+    /**
+     * Lo que eligió el usuario en cada diálogo vuelve por acá.
+     *
+     * Se llama desde `onViewCreated` y NO desde los `setOnClickListener`: si cambia el
+     * tamaño de letra, el tema o el idioma con un diálogo abierto, Android recrea el
+     * fragment y el diálogo restaurado entrega su resultado enseguida. Registrando el
+     * listener recién al tocar el botón, ese resultado llegaría sin nadie escuchando y se
+     * perdería sin un solo aviso — peor que el crash que esto arregla, porque no se nota.
+     *
+     * `parentFragmentManager` (vía la extensión `setFragmentResultListener`) es el mismo
+     * FragmentManager donde se muestran los diálogos, como hasta ahora.
+     */
+    private fun escucharResultadosDeLosDialogos() {
+        setFragmentResultListener(SatellitePickerDialog.RESULT_KEY) { _, bundle ->
+            sharedVm.selectedSatellite.value = SatellitePickerDialog.satelliteFromResult(bundle)
+            sharedVm.antennaType.value = AntennaType.SATELLITE
+        }
     }
 
     override fun onResume() {

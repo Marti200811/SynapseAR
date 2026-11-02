@@ -97,6 +97,18 @@ class RemoteSheet : BottomSheetDialogFragment() {
         tvResult = view.findViewById(R.id.tvConsultaResult)
         btnShare = view.findViewById(R.id.btnConsultaShare)
 
+        // El satélite elegido vuelve por acá, y el listener se registra en onViewCreated y NO
+        // dentro del setOnClickListener de abajo: si cambia la letra, el tema o el idioma con
+        // el selector abierto, la hoja se recrea y el selector restaurado entrega su resultado
+        // enseguida. Registrándolo recién al tocar el botón, ese satélite llegaría sin nadie
+        // escuchando y se perdería sin aviso.
+        // childFragmentManager: el selector vive y muere con esta hoja (igual que al mostrarlo).
+        childFragmentManager.setFragmentResultListener(
+            SatellitePickerDialog.RESULT_KEY, viewLifecycleOwner
+        ) { _, bundle ->
+            onSatelliteChosen(SatellitePickerDialog.satelliteFromResult(bundle))
+        }
+
         view.findViewById<Button>(R.id.btnConsultaSatellite).setOnClickListener {
             // Un solo selector a la vez: dos toques seguidos no apilan dos diálogos.
             if (childFragmentManager.findFragmentByTag(TAG_PICKER) != null) return@setOnClickListener
@@ -109,8 +121,7 @@ class RemoteSheet : BottomSheetDialogFragment() {
                 longitude = observer.lon
             }
             // childFragmentManager: el selector vive y muere con esta hoja.
-            SatellitePickerDialog(loc) { satellite -> onSatelliteChosen(satellite) }
-                .show(childFragmentManager, TAG_PICKER)
+            SatellitePickerDialog.newInstance(loc).show(childFragmentManager, TAG_PICKER)
         }
 
         btnShare?.setOnClickListener { shareResult() }

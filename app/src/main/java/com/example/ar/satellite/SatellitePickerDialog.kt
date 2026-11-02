@@ -11,7 +11,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ar.Analytics
@@ -22,18 +24,74 @@ import com.example.ar.access.Feature
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
- * @param location  Ubicación actual del usuario. Si se provee, los satélites
- *                  se ordenan por visibilidad (elevación > 0 primero) y se
- *                  muestra la elevación en cada ítem.
+ * Selector de satélite geoestacionario.
+ *
+ * El constructor va SIN parámetros a propósito. Cuando cambia el tamaño de letra, el tema
+ * o el idioma, Android recrea la Activity y `FragmentFactory` vuelve a instanciar los
+ * diálogos que estaban abiertos llamando al constructor vacío; si no existe, tira
+ * `Fragment$InstantiationException` y la app se cierra (es el crash de la v21, reproducido
+ * en el Moto el 2026-11-02). Por eso los datos entran por [newInstance] / `arguments` y el
+ * satélite elegido sale por `setFragmentResult` con [RESULT_KEY].
+ *
+ * Quien lo abre registra su listener en `onViewCreated`, NUNCA dentro del
+ * `setOnClickListener`: después de recrearse, el diálogo restaurado entrega el resultado
+ * enseguida, y si todavía no hay nadie escuchando se pierde en silencio.
+ *
+ * El control de acceso Pro vive acá adentro ([AccessManager] más `freeSatelliteNames`):
+ * quien llama no decide nada de eso.
  */
-class SatellitePickerDialog(
-    private val location: Location? = null,
-    private val onSelected: (Satellite) -> Unit
-) : DialogFragment() {
+class SatellitePickerDialog : DialogFragment() {
+
+    companion object {
+        /** Clave del resultado. Quien escucha lee el Bundle con [satelliteFromResult]. */
+        const val RESULT_KEY = "satellite_picker_result"
+
+        private const val ARG_LOCATION = "location"
+
+        private const val RESULT_NAME = "name"
+        private const val RESULT_ORBITAL_LON = "orbital_lon"
+        private const val RESULT_REGION = "region"
+        private const val RESULT_USE = "use"
+
+        /**
+         * @param location Ubicación desde donde se mira. Si se provee, los satélites se
+         *                 ordenan por visibilidad (elevación > 0 primero) y se muestra la
+         *                 elevación de cada ítem. `Location` es `Parcelable`, así que
+         *                 viaja entero en el Bundle.
+         */
+        fun newInstance(location: Location? = null) = SatellitePickerDialog().apply {
+            arguments = Bundle().apply { putParcelable(ARG_LOCATION, location) }
+        }
+
+        /**
+         * Rearma el [Satellite] que viajó en el Bundle de [RESULT_KEY].
+         *
+         * Se lee junto con [resultBundle], que es su par: `Satellite` no es `Parcelable`,
+         * así que sus campos viajan sueltos. Con una clave con nombre por campo no hay
+         * forma de cruzar dos valores del mismo tipo sin que se vea en estas líneas.
+         */
+        fun satelliteFromResult(bundle: Bundle) = Satellite(
+            name       = bundle.getString(RESULT_NAME) ?: "",
+            orbitalLon = bundle.getDouble(RESULT_ORBITAL_LON),
+            region     = bundle.getString(RESULT_REGION) ?: "",
+            use        = bundle.getString(RESULT_USE) ?: ""
+        )
+
+        private fun resultBundle(satellite: Satellite) = Bundle().apply {
+            putString(RESULT_NAME, satellite.name)
+            putDouble(RESULT_ORBITAL_LON, satellite.orbitalLon)
+            putString(RESULT_REGION, satellite.region)
+            putString(RESULT_USE, satellite.use)
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.dialog_satellite_picker, null)
+
+        val location = arguments?.let {
+            BundleCompat.getParcelable(it, ARG_LOCATION, Location::class.java)
+        }
 
         val etSearch = view.findViewById<EditText>(R.id.etSatSearch)
         val rv       = view.findViewById<RecyclerView>(R.id.rvSatellites)
@@ -61,17 +119,13 @@ class SatellitePickerDialog(
         val adapter = SatelliteAdapter(sorted, hasAccess, elevationMap) { satellite ->
             val isFree = SatelliteDatabase.freeSatelliteNames.contains(satellite.name)
             if (hasAccess || isFree) {
-                onSelected(satellite)
-                dismiss()
+                entregarResultado(satellite)
             } else {
                 (requireActivity() as MainActivity).showUpgradeDialog(
                     source = Analytics.SRC_SATELLITE_LOCKED,
                     feature = Feature.SATELLITE,
                     onUnlocked = {
-                        if (isAdded) {
-                            onSelected(satellite)
-                            dismiss()
-                        }
+                        if (isAdded) entregarResultado(satellite)
                     }
                 )
             }
@@ -91,6 +145,11 @@ class SatellitePickerDialog(
         return MaterialAlertDialogBuilder(requireContext())
             .setView(view)
             .create()
+    }
+
+    private fun entregarResultado(satellite: Satellite) {
+        setFragmentResult(RESULT_KEY, resultBundle(satellite))
+        dismiss()
     }
 }
 
