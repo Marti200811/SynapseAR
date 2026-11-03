@@ -9,28 +9,86 @@ import android.text.style.StrikethroughSpan
 import android.view.LayoutInflater
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
 import com.example.ar.access.AccessManager
 import com.example.ar.access.Feature
 import com.example.ar.access.RewardedAdManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
+/**
+ * Diálogo de venta de Pro, con la opción de desbloquear una función mirando un anuncio.
+ *
+ * Este diálogo NO recibe nada por propiedades: las busca él. Antes la Activity le empujaba
+ * `billingManager`, `rewardedAdManager`, `source`, `feature` y `onRewardEarned` justo después
+ * de construirlo. Eso funcionaba la primera vez y se rompía en silencio en la segunda: al
+ * cambiar el tamaño de letra, el tema o el idioma, Android recrea la Activity y vuelve a
+ * instanciar el diálogo por su constructor vacío, sin volver a pasar por `showUpgradeDialog`.
+ * Las cinco propiedades volvían a su valor inicial y el diálogo reaparecía **con el botón de
+ * compra muerto**: `billingManager?.launchPurchase()` no hacía nada, el precio real no se
+ * mostraba y la opción del anuncio desaparecía. Peor todavía, `Analytics.upgradeButtonTapped`
+ * sí se registraba, así que el embudo contaba una intención de compra que nunca se lanzó.
+ *
+ * El arreglo es distinto al de los otros seis diálogos, y por una razón concreta: dos de las
+ * cinco cosas que necesitaba son **objetos vivos** (`BillingManager`, `RewardedAdManager`) y
+ * no caben en un `Bundle`. Así que cada cosa entra por donde le corresponde:
+ *
+ * - los dos managers: se leen de [MainActivity] en cada acceso. La Activity los recrea en su
+ *   `onCreate`, así que después de la recreación hay instancias vivas — el diálogo solo tenía
+ *   que preguntar en vez de esperar que se las dieran.
+ * - `source` y `feature`: escalares, van en `arguments` vía [newInstance].
+ * - `onRewardEarned`: era una lambda, y una lambda no sobrevive. Pasa a ser un resultado de
+ *   fragment ([resultKeyFor]), el mismo mecanismo que usan los otros seis.
+ */
 class UpgradeDialog : DialogFragment() {
 
-    /** La activity pasa su BillingManager para poder lanzar la compra */
-    var billingManager: BillingManager? = null
+    companion object {
+        private const val ARG_SOURCE = "source"
+        private const val ARG_FEATURE = "feature"
 
-    /** Función bloqueada que trajo al usuario acá — se registra en Analytics. */
-    var source: String = "unknown"
+        /**
+         * Canal por el que se avisa que [feature] quedó desbloqueada con un anuncio.
+         *
+         * Hay una clave por función en vez de una sola compartida, por dos motivos. Uno: todos
+         * los que escuchan lo hacen en el `FragmentManager` de la Activity —que es donde se
+         * muestra este diálogo, no en el del fragment que lo pidió— y ahí
+         * `setFragmentResultListener` admite **un solo listener por clave**, así que una clave
+         * compartida haría que el último en registrarse pisara a los demás. Dos: derivar la
+         * clave de la función hace imposible que el lado que avisa y el que escucha usen
+         * strings distintos.
+         */
+        fun resultKeyFor(feature: Feature) = "upgrade_unlocked_${feature.name}"
 
-    /** Manager de anuncios recompensados. Si es null, no se ofrece la opción. */
-    var rewardedAdManager: RewardedAdManager? = null
+        /**
+         * @param source cuál de las funciones bloqueadas trajo al usuario acá (va a Analytics).
+         * @param feature qué se desbloquea si mira un anuncio. Null = no se ofrece anuncio y
+         *                este diálogo nunca emite un resultado.
+         */
+        fun newInstance(source: String, feature: Feature? = null) = UpgradeDialog().apply {
+            arguments = Bundle().apply {
+                putString(ARG_SOURCE, source)
+                putString(ARG_FEATURE, feature?.name)
+            }
+        }
+    }
 
-    /** Función que se desbloquea si el usuario gana la recompensa. */
-    var feature: Feature? = null
+    private val source: String
+        get() = arguments?.getString(ARG_SOURCE) ?: "unknown"
 
-    /** Se invoca tras ganar la recompensa, para ejecutar la acción que estaba bloqueada. */
-    var onRewardEarned: (() -> Unit)? = null
+    /**
+     * El enum viaja por `name`, no por `ordinal`: reordenar [Feature] no puede cambiar en
+     * silencio qué función se desbloquea. Si el nombre guardado ya no existe (un `arguments`
+     * viejo restaurado tras actualizar la app), vale más no ofrecer el anuncio que crashear.
+     */
+    private val feature: Feature?
+        get() = arguments?.getString(ARG_FEATURE)
+            ?.let { nombre -> Feature.entries.firstOrNull { it.name == nombre } }
+
+    private val billing: BillingManager?
+        get() = (activity as? MainActivity)?.billingOrNull
+
+    private val ads: RewardedAdManager?
+        get() = (activity as? MainActivity)?.rewardedAdOrNull
 
     private var btnBuy: MaterialButton? = null
 
@@ -43,12 +101,12 @@ class UpgradeDialog : DialogFragment() {
                 // Se registra ANTES de lanzar la compra: mide intención aunque
                 // el flujo de Google Play falle (ej. perfil de pagos incompleto).
                 Analytics.upgradeButtonTapped(requireContext(), source)
-                billingManager?.launchPurchase()
+                billing?.launchPurchase()
                 dismiss()
             }
         }
 
-        val ads = rewardedAdManager
+        val ads = ads
         val feat = feature
         val btnAd = view.findViewById<MaterialButton>(R.id.btnWatchAd)
 
@@ -88,7 +146,7 @@ class UpgradeDialog : DialogFragment() {
                     onClosedAfterReward = {
                         // La UI sí depende de que el fragment siga vivo.
                         if (isAdded) {
-                            onRewardEarned?.invoke()
+                            setFragmentResult(resultKeyFor(feat), Bundle())
                             dismiss()
                         }
                     },
@@ -110,13 +168,13 @@ class UpgradeDialog : DialogFragment() {
         }
 
         // Mostrar el precio real de Google Play (localizado, refleja promos)
-        applyPrice(billingManager?.formattedProPrice)
-        billingManager?.setPriceListener { price ->
+        applyPrice(billing?.formattedProPrice)
+        billing?.setPriceListener { price ->
             if (isAdded) applyPrice(price)
         }
 
         view.findViewById<TextView>(R.id.btnRestore).setOnClickListener {
-            billingManager?.restorePurchases(userInitiated = true)
+            billing?.restorePurchases(userInitiated = true)
             dismiss()
         }
 
@@ -142,8 +200,7 @@ class UpgradeDialog : DialogFragment() {
             return
         }
 
-        val bm = billingManager
-        val anchor = bm?.let {
+        val anchor = billing?.let {
             PromoManager.anchorPrice(it.proPriceMicros, it.proPriceCurrencyCode)
         }
 
@@ -164,7 +221,7 @@ class UpgradeDialog : DialogFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         // Evitar fugas: el listener captura la vista del botón
-        billingManager?.setPriceListener(null)
+        billing?.setPriceListener(null)
         btnBuy = null
     }
 }

@@ -46,6 +46,7 @@ import com.example.ar.SettingsDialog
 import com.example.ar.SharedViewModel
 import com.example.ar.TargetPoint
 import com.example.ar.ThemeManager
+import com.example.ar.UpgradeDialog
 import com.example.ar.antenna.AntennaPickerDialog
 import com.example.ar.antenna.AntennaType
 import com.example.ar.tdt.TdtPickerDialog
@@ -133,9 +134,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
 
         // Botón configuración ⚙
         binding.btnSettings.setOnClickListener {
-            val dialog = SettingsDialog()
-            dialog.onUnitsChanged = { updateReadouts() }
-            dialog.show(parentFragmentManager, "settings")
+            SettingsDialog.newInstance().show(parentFragmentManager, "settings")
         }
 
         // Toque en la brújula → calibración (si calibración baja) o selector de tema (Pro)
@@ -155,8 +154,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
             } else {
                 (requireActivity() as MainActivity).showUpgradeDialog(
                     source = Analytics.SRC_COMPASS_THEME,
-                    feature = Feature.COMPASS_THEMES,
-                    onUnlocked = { if (isAdded) showThemePicker() }
+                    feature = Feature.COMPASS_THEMES
                 )
             }
             true
@@ -179,13 +177,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                     } else {
                         (requireActivity() as MainActivity).showUpgradeDialog(
                             source = Analytics.SRC_WIFI_SCANNER,
-                            feature = Feature.WIFI_SCANNER,
-                            onUnlocked = {
-                                if (isAdded) {
-                                    WifiScannerDialog.newInstance()
-                                        .show(parentFragmentManager, "wifi_scanner")
-                                }
-                            }
+                            feature = Feature.WIFI_SCANNER
                         )
                     }
                 }
@@ -197,13 +189,7 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                     } else {
                         (requireActivity() as MainActivity).showUpgradeDialog(
                             source = Analytics.SRC_TDT_PICKER,
-                            feature = Feature.TDT_PICKER,
-                            onUnlocked = {
-                                if (isAdded) {
-                                    TdtPickerDialog.newInstance(currentLocation, userCountryCode)
-                                        .show(parentFragmentManager, "tdt_picker")
-                                }
-                            }
+                            feature = Feature.TDT_PICKER
                         )
                     }
                 }
@@ -321,6 +307,27 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
      * FragmentManager donde se muestran los diálogos, como hasta ahora.
      */
     private fun escucharResultadosDeLosDialogos() {
+        setFragmentResultListener(SettingsDialog.RESULT_KEY) { _, _ ->
+            updateReadouts()
+        }
+
+        // Desbloqueos por anuncio. Van en el `FragmentManager` de la Activity, no en el
+        // nuestro, porque es ahí donde `showUpgradeDialog` muestra el diálogo. Y hay una
+        // clave por función porque ese FragmentManager admite un solo listener por clave:
+        // con una compartida, el último en registrarse pisaría a los otros dos.
+        //
+        // Cada uno rehace la acción que estaba bloqueada leyendo el estado de AHORA
+        // (`currentLocation`, `userCountryCode`), no el que había cuando se abrió el
+        // diálogo: el usuario pudo haberse movido mientras miraba el anuncio.
+        escucharDesbloqueo(Feature.COMPASS_THEMES) { showThemePicker() }
+        escucharDesbloqueo(Feature.WIFI_SCANNER) {
+            WifiScannerDialog.newInstance().show(parentFragmentManager, "wifi_scanner")
+        }
+        escucharDesbloqueo(Feature.TDT_PICKER) {
+            TdtPickerDialog.newInstance(currentLocation, userCountryCode)
+                .show(parentFragmentManager, "tdt_picker")
+        }
+
         setFragmentResultListener(SatellitePickerDialog.RESULT_KEY) { _, bundle ->
             sharedVm.selectedSatellite.value = SatellitePickerDialog.satelliteFromResult(bundle)
             sharedVm.antennaType.value = AntennaType.SATELLITE
@@ -354,6 +361,21 @@ class CompassFragment : Fragment(), OrientationManager.Listener {
                 WaypointDialog.ACTION_CLEAR_TARGET -> sharedVm.target.value = null
             }
         }
+    }
+
+    /**
+     * Registra qué hacer cuando [feature] queda desbloqueada por un anuncio.
+     *
+     * Pasar `viewLifecycleOwner` consigue dos cosas: el resultado se entrega solo con la
+     * vista viva —así `show(parentFragmentManager, …)` nunca corre sobre un fragment
+     * destruido, que es lo que antes evitaba a mano el `if (isAdded)`— y el listener se
+     * da de baja solo. Si el usuario está en otra pestaña cuando termina el anuncio, el
+     * resultado queda guardado y se entrega al volver.
+     */
+    private fun escucharDesbloqueo(feature: Feature, accion: () -> Unit) {
+        requireActivity().supportFragmentManager.setFragmentResultListener(
+            UpgradeDialog.resultKeyFor(feature), viewLifecycleOwner
+        ) { _, _ -> accion() }
     }
 
     override fun onResume() {

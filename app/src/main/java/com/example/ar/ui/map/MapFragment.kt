@@ -134,7 +134,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, OrientationManager.Listener 
         mapFragment.getMapAsync(this)
 
         view.findViewById<TextView>(R.id.btnMapSettings).setOnClickListener {
-            SettingsDialog().show(parentFragmentManager, "settings")
+            SettingsDialog.newInstance().show(parentFragmentManager, "settings")
         }
 
         btnSearch.setOnClickListener { performSearch() }

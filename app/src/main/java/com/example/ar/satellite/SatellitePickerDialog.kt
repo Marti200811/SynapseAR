@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.ar.Analytics
 import com.example.ar.MainActivity
 import com.example.ar.R
+import com.example.ar.UpgradeDialog
 import com.example.ar.access.AccessManager
 import com.example.ar.access.Feature
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -53,6 +54,9 @@ class SatellitePickerDialog : DialogFragment() {
         private const val RESULT_REGION = "region"
         private const val RESULT_USE = "use"
 
+        /** Clave del estado guardado: ver [satelitePendiente]. */
+        private const val STATE_PENDIENTE = "satelite_pendiente"
+
         /**
          * @param location Ubicación desde donde se mira. Si se provee, los satélites se
          *                 ordenan por visibilidad (elevación > 0 primero) y se muestra la
@@ -83,6 +87,43 @@ class SatellitePickerDialog : DialogFragment() {
             putString(RESULT_REGION, satellite.region)
             putString(RESULT_USE, satellite.use)
         }
+    }
+
+    /**
+     * Satélite que el usuario tocó estando bloqueado, mientras espera el desbloqueo por
+     * anuncio. Se guarda el **nombre** y no el objeto porque es lo único que hace falta para
+     * volver a encontrarlo en [SatelliteDatabase], y un String entra en el estado guardado.
+     *
+     * Hace falta recordarlo porque este es el único desbloqueo que depende de en qué tocó el
+     * usuario. Los otros rehacen una acción fija; este tiene que entregar *ese* satélite, y
+     * la variable capturada por la lambda no sobrevivía a que Android recreara el diálogo.
+     */
+    private var satelitePendiente: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        satelitePendiente = savedInstanceState?.getString(STATE_PENDIENTE)
+
+        // Entregar el satélite que el usuario había tocado, si se desbloqueó con un anuncio.
+        //
+        // El listener va en `onCreate` y NO adentro del click: después de una recreación el
+        // diálogo de upgrade entrega su resultado enseguida, así que si nadie está
+        // escuchando todavía, el desbloqueo se pierde en silencio. Y va en el
+        // `FragmentManager` de la Activity porque es ahí donde se muestra ese diálogo.
+        // El owner es el fragment y no `viewLifecycleOwner`: al venir de `onCreateDialog`,
+        // este DialogFragment no tiene vista propia y `viewLifecycleOwner` tiraría.
+        requireActivity().supportFragmentManager.setFragmentResultListener(
+            UpgradeDialog.resultKeyFor(Feature.SATELLITE), this
+        ) { _, _ ->
+            val nombre = satelitePendiente ?: return@setFragmentResultListener
+            SatelliteDatabase.satellites.firstOrNull { it.name == nombre }
+                ?.let { entregarResultado(it) }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_PENDIENTE, satelitePendiente)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -121,12 +162,10 @@ class SatellitePickerDialog : DialogFragment() {
             if (hasAccess || isFree) {
                 entregarResultado(satellite)
             } else {
+                satelitePendiente = satellite.name
                 (requireActivity() as MainActivity).showUpgradeDialog(
                     source = Analytics.SRC_SATELLITE_LOCKED,
-                    feature = Feature.SATELLITE,
-                    onUnlocked = {
-                        if (isAdded) entregarResultado(satellite)
-                    }
+                    feature = Feature.SATELLITE
                 )
             }
         }

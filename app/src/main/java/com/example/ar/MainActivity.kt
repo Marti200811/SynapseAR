@@ -31,6 +31,19 @@ class MainActivity : AppCompatActivity() {
     lateinit var billingManager: BillingManager
     lateinit var rewardedAdManager: RewardedAdManager
 
+    /**
+     * Accesos seguros a los dos managers, para que los use un diálogo restaurado.
+     *
+     * Hacen falta porque los de arriba son `lateinit`: si la Activity se está recreando y un
+     * diálogo restaurado pregunta antes de que `onCreate` termine de construirlos, leerlos
+     * directo tira `UninitializedPropertyAccessException`. Devolver null deja que el diálogo
+     * degrade (sin precio, sin anuncio) en vez de matar el proceso.
+     */
+    val billingOrNull: BillingManager?
+        get() = if (::billingManager.isInitialized) billingManager else null
+    val rewardedAdOrNull: RewardedAdManager?
+        get() = if (::rewardedAdManager.isInitialized) rewardedAdManager else null
+
     private lateinit var consentInformation: ConsentInformation
     private var isMobileAdsInitialized = false
 
@@ -115,6 +128,18 @@ class MainActivity : AppCompatActivity() {
         // registraría ningún éxito nuevo nunca más.
         RatingPrompt.resetSession(this)
 
+        // Si el usuario desbloquea AR con un anuncio, entrar al tab.
+        //
+        // Va registrado acá, en onCreate, y NO dentro del listener de abajo: el diálogo se
+        // recrea junto con la Activity y entrega su resultado enseguida, así que el que
+        // escucha tiene que estar listo antes. Registrarlo recién al abrir el diálogo
+        // perdería el desbloqueo en silencio, que es peor que el crash que esto reemplaza.
+        supportFragmentManager.setFragmentResultListener(
+            UpgradeDialog.resultKeyFor(Feature.AR), this
+        ) { _, _ ->
+            navController.navigate(R.id.arFragment)
+        }
+
         // Bloquear tab AR si no tiene acceso.
         // AccessManager resuelve "es Pro O tiene un desbloqueo temporal vigente",
         // y ProManager sigue respetando el toggle DEBUG_FORCE_FREE en builds de desarrollo.
@@ -127,8 +152,7 @@ class MainActivity : AppCompatActivity() {
                 navController.popBackStack()
                 showUpgradeDialog(
                     source = Analytics.SRC_AR_TAB,
-                    feature = Feature.AR,
-                    onUnlocked = { navController.navigate(R.id.arFragment) }
+                    feature = Feature.AR
                 )
             }
         }
@@ -203,23 +227,19 @@ class MainActivity : AppCompatActivity() {
     // ── Upgrade dialog ────────────────────────────────────────────────────
 
     /**
+     * Abre el diálogo de venta de Pro.
+     *
+     * Ya no recibe un `onUnlocked`: una lambda no sobrevive a que Android recree la Activity,
+     * así que el aviso de "se desbloqueó" vuelve por un resultado de fragment. Quien quiera
+     * reaccionar se registra con [UpgradeDialog.resultKeyFor] **en el `FragmentManager` de
+     * esta Activity**, que es donde se muestra el diálogo, y lo hace al crearse — no al abrirlo.
+     *
      * @param source cuál de las funciones bloqueadas trajo al usuario acá.
      * @param feature qué se desbloquea si mira un anuncio. Null = no se ofrece anuncio.
-     * @param onUnlocked qué ejecutar si gana la recompensa.
      */
-    fun showUpgradeDialog(
-        source: String,
-        feature: Feature? = null,
-        onUnlocked: (() -> Unit)? = null
-    ) {
+    fun showUpgradeDialog(source: String, feature: Feature? = null) {
         Analytics.upgradeDialogShown(this, source)
-        val dialog = UpgradeDialog()
-        dialog.billingManager = billingManager
-        dialog.source = source
-        dialog.rewardedAdManager = rewardedAdManager
-        dialog.feature = feature
-        dialog.onRewardEarned = onUnlocked
-        dialog.show(supportFragmentManager, "upgrade")
+        UpgradeDialog.newInstance(source, feature).show(supportFragmentManager, "upgrade")
     }
 
     // ── Ciclo de vida AdMob + Updates ────────────────────────────────────

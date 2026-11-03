@@ -3,12 +3,31 @@ package com.example.ar
 import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
+/**
+ * Ajustes de la app: sistema de unidades y el acceso para calificar.
+ *
+ * El aviso de "cambiaron las unidades" sale por [RESULT_KEY] y no por una propiedad.
+ * Antes era `var onUnitsChanged: (() -> Unit)?`, que el fragment padre asignaba al abrir el
+ * diálogo. Al cambiar el tamaño de letra, el tema o el idioma, Android recrea el diálogo sin
+ * volver a pasar por ese código y la propiedad quedaba en null: la preferencia **sí** se
+ * guardaba, pero el padre no se enteraba y seguía mostrando los números en la unidad vieja
+ * hasta que algo más lo refrescara.
+ */
 class SettingsDialog : DialogFragment() {
 
-    /** Notifica al fragmento padre cuando cambia la preferencia */
-    var onUnitsChanged: (() -> Unit)? = null
+    companion object {
+        /**
+         * Clave del resultado. El Bundle viene vacío a propósito: el aviso es el hecho de
+         * que llegó. La unidad elegida ya está guardada en [SettingsManager], que es de
+         * donde la lee quien escucha.
+         */
+        const val RESULT_KEY = "settings_units_changed"
+
+        fun newInstance() = SettingsDialog()
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val ctx     = requireContext()
@@ -34,7 +53,7 @@ class SettingsDialog : DialogFragment() {
                     else -> UnitSystem.AUTO
                 }
                 SettingsManager.setUnitSystem(ctx, system)
-                onUnitsChanged?.invoke()
+                setFragmentResult(RESULT_KEY, Bundle())
                 dialog.dismiss()
             }
             // Única superficie de ajustes que tiene la app, así que el acceso para
