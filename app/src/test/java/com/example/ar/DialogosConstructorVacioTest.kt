@@ -12,36 +12,25 @@ import org.junit.Test
  * parámetros obligatorios en el constructor, ese camino tira `NoSuchMethodException`, que
  * sale como `Fragment$InstantiationException`, y la app se cierra.
  *
- * Los seis diálogos tenían ese problema y estaba vivo en producción (v21 / 1.4.1,
+ * Seis de los diálogos tenían ese problema y estaba vivo en producción (v21 / 1.4.1,
  * reproducido en el Moto el 2026-11-02 con el selector de satélites). **Este test los
  * habría detectado a los seis**, y está acá para que mañana nadie agregue un diálogo con
  * parámetros en el constructor y vuelva a romper lo mismo.
+ *
+ * Tener constructor vacío es necesario pero no suficiente: un diálogo puede instanciarse bien
+ * y seguir perdiendo sus dependencias. Eso lo cubre [DialogosSinEstadoInyectadoTest], que
+ * recorre la misma lista.
  *
  * No hace falta ningún dispositivo ni ninguna dependencia nueva: `Class.forName` y
  * `getConstructor` son de la JDK, y nunca se llega a instanciar nada de Android.
  */
 class DialogosConstructorVacioTest {
 
-    /**
-     * La lista va escrita a mano y no por escaneo del classpath a propósito: así agregar un
-     * diálogo obliga a pasar por acá y a decidirlo, en vez de que un escaneo lo cubra (o lo
-     * deje afuera) sin que nadie lo mire. Son nombres literales porque es exactamente lo que
-     * Android guarda en el estado y lo que le pasa después a `FragmentFactory`.
-     */
-    private val dialogos = listOf(
-        "com.example.ar.antenna.AntennaPickerDialog",
-        "com.example.ar.astro.SunMoonDialog",
-        "com.example.ar.satellite.SatellitePickerDialog",
-        "com.example.ar.tdt.TdtPickerDialog",
-        "com.example.ar.waypoint.WaypointDialog",
-        "com.example.ar.wifi.WifiScannerDialog"
-    )
-
     @Test
     fun `los dialogos se pueden instanciar sin argumentos`() {
-        // Los seis de una, y no un test por clase: si se rompen varios, el rojo los nombra
+        // Todos de una, y no un test por clase: si se rompen varios, el rojo los nombra
         // a todos juntos en vez de contarlos de a uno.
-        val rotos = dialogos.mapNotNull { nombre ->
+        val rotos = DIALOGOS_DE_LA_APP.mapNotNull { nombre ->
             // initialize = false, igual que FragmentFactory.loadFragmentClass: alcanza con
             // cargar la clase, no hay que inicializarla para saber qué constructores tiene.
             val clase = Class.forName(nombre, false, javaClass.classLoader)
